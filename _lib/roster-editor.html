@@ -52,9 +52,9 @@
 
   <div class="card">
     <h2>3. 잠금 파일 만들기</h2>
-    <label for="pw2">새 비밀번호 (그대로 쓰려면 현재 비밀번호를 다시 입력)</label>
+    <label for="pw2">비밀번호 (그대로 쓰려면 현재 비밀번호를 다시 입력 — 이 경우 칠판에서 다시 묻지 않음)</label>
     <input id="pw2" type="password">
-    <label for="pw3">새 비밀번호 확인</label>
+    <label for="pw3">비밀번호 확인</label>
     <input id="pw3" type="password">
     <button id="saveBtn" type="button">잠금 파일 내려받기</button>
     <div class="msg" id="saveMsg"></div>
@@ -67,6 +67,7 @@
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
+  var loaded = null; // { box, pw } 불러온 파일과 그때 쓴 비밀번호
   function msg(id, text, ok){ var m=$(id); m.textContent=text; m.className='msg ' + (ok?'ok':'bad'); }
 
   function toText(data){
@@ -101,7 +102,10 @@
     msg('loadMsg','불러오는 중…', true);
     fetch($('path').value + '?t=' + Date.now(), { cache:'no-store' })
       .then(function(r){ if(!r.ok) throw new Error('file'); return r.json(); })
-      .then(function(box){ return RosterLock.unlockWithPassword(box, $('pw').value, false); })
+      .then(function(box){
+        var pw = $('pw').value;
+        return RosterLock.unlockWithPassword(box, pw, false).then(function(data){ loaded = { box:box, pw:pw }; return data; });
+      })
       .then(function(data){
         $('text').value = toText(data);
         var n = data.groups.reduce(function(a,g){ return a + g.raw.length; }, 0);
@@ -119,13 +123,15 @@
     var p2 = $('pw2').value, p3 = $('pw3').value;
     if (p2.length < 4) return msg('saveMsg', '비밀번호는 4자 이상으로 해 주세요');
     if (p2 !== p3) return msg('saveMsg', '새 비밀번호 두 칸이 서로 달라요');
-    RosterLock.encrypt(r.data, p2).then(function(box){
+    var same = loaded && loaded.pw === p2;
+    RosterLock.encrypt(r.data, p2, same ? loaded.box.iter : undefined, same ? loaded.box.salt : undefined).then(function(box){
       var blob = new Blob([JSON.stringify(box)], { type:'application/json' });
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob); a.download = '_명단.enc.json';
       document.body.appendChild(a); a.click(); a.remove();
       var n = r.data.groups.reduce(function(a,g){ return a + g.raw.length; }, 0);
-      msg('saveMsg', '내려받았어요 · ' + r.data.groups.length + '개 반, ' + n + '명', true);
+      msg('saveMsg', '내려받았어요 · ' + r.data.groups.length + '개 반, ' + n + '명'
+        + (same ? ' · 비밀번호가 같아서 칠판에서 다시 묻지 않아요' : ' · 새 비밀번호라 칠판마다 한 번씩 다시 입력해야 해요'), true);
     });
   };
 })();

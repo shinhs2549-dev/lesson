@@ -29,9 +29,10 @@
     return crypto.subtle.decrypt({ name:'AES-GCM', iv:unb64(box.iv) }, key, unb64(box.ct))
       .then(function(plain){ return JSON.parse(new TextDecoder().decode(plain)); });
   }
-  function encrypt(data, password, iter){
+  // keepSalt: 비밀번호를 그대로 쓸 때 기존 salt를 넘기면 열쇠가 같아져서 칠판에서 다시 묻지 않음
+  function encrypt(data, password, iter, keepSalt){
     iter = iter || ITER_DEFAULT;
-    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var salt = keepSalt ? unb64(keepSalt) : crypto.getRandomValues(new Uint8Array(16));
     var iv = crypto.getRandomValues(new Uint8Array(12));
     return deriveKey(password, salt, iter).then(function(key){
       var plain = new TextEncoder().encode(JSON.stringify(data));

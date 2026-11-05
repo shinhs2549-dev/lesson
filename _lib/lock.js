@@ -16,7 +16,14 @@
     } catch(e){ return null; }
   }
 
+  // 복사·붙여넣기로 딸려 들어오는 앞뒤 공백, 줄바꿈, 보이지 않는 문자 제거
+  function cleanPw(pw){
+    return String(pw || '').replace(/[​-‍⁠﻿­]/g, '').trim()
+      .replace(/^[`'"“”‘’]+|[`'"“”‘’]+$/g, '').trim();
+  }
+
   function deriveKey(password, salt, iter){
+    password = cleanPw(password);
     var enc = new TextEncoder();
     return crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey'])
       .then(function(base){
@@ -153,5 +160,5 @@
   }
 
   window.RosterLock = { open:open, encrypt:encrypt, unlockWithPassword:unlockWithPassword,
-    openForEdit:openForEdit, reencrypt:reencrypt, forget:forget };
+    openForEdit:openForEdit, reencrypt:reencrypt, forget:forget, cleanPw:cleanPw };
 })();

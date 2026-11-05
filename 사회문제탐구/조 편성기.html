@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>조 편성기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#DCF0FF;
+    --sky-bottom:#FFF6DE;
+    --ink:#233150;
+    --ink-soft:#5B6B8C;
+    --card:#FFFFFF;
+    --coral:#FF6B5C;
+    --coral-dark:#E85445;
+    --leaf:#3FAE73;
+    --sun:#FFC94D;
+    --line:#E4E9F2;
+    --shadow:0 10px 24px rgba(35,50,77,.10);
+    --shadow-lg:0 18px 40px rgba(35,50,77,.16);
+    --radius:22px;
+  }
+  :root:not([data-theme="light"]){
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --sky-top:#171A24;
+      --sky-bottom:#20232E;
+      --ink:#EDF0F7;
+      --ink-soft:#A9B2C7;
+      --card:#262A38;
+      --line:#3A3F52;
+      --shadow:0 10px 24px rgba(0,0,0,.35);
+      --shadow-lg:0 18px 40px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --sky-top:#171A24;
+    --sky-bottom:#20232E;
+    --ink:#EDF0F7;
+    --ink-soft:#A9B2C7;
+    --card:#262A38;
+    --line:#3A3F52;
+    --shadow:0 10px 24px rgba(0,0,0,.35);
+    --shadow-lg:0 18px 40px rgba(0,0,0,.45);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    font-family:'Nanum Gothic', -apple-system, 'Malgun Gothic', sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 800px at 15% -10%, rgba(255,255,255,.6), transparent 60%),
+      linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+    background-attachment:fixed;
+    overscroll-behavior:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .display{font-family:'Jua','Nanum Gothic',sans-serif;}
+  #app{min-height:100vh;width:100%;overflow-x:hidden;}
+  .screen{display:none;min-height:100vh;padding:20px 16px 40px;}
+  .screen.active{display:flex;flex-direction:column;align-items:center;}
+
+  /* ---------- setup ---------- */
+  .setup-wrap{width:100%;max-width:640px;margin:0 auto;}
+  h1.title{
+    text-align:center;
+    font-size:clamp(28px,7vw,42px);
+    margin:10px 0 4px;
+    color:var(--coral-dark);
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .subtitle{text-align:center;color:var(--ink-soft);margin:0 0 28px;font-size:15px;}
+  .field{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px 18px 20px;
+    margin-bottom:16px;
+  }
+  .field label.field-title{
+    display:block;font-weight:800;font-size:15px;margin-bottom:12px;color:var(--ink);
+  }
+  select#classSelect{
+    width:100%;padding:14px 14px;border-radius:14px;border:2px solid var(--line);
+    font-size:16px;background:var(--card);color:var(--ink);font-family:inherit;
+  }
+  textarea#customRoster{
+    width:100%;min-height:110px;border-radius:14px;border:2px solid var(--line);
+    padding:12px;font-size:15px;font-family:inherit;color:var(--ink);background:var(--card);
+    resize:vertical;margin-top:10px;
+  }
+  .chip-row{display:flex;flex-wrap:wrap;gap:10px;}
+  .chip{
+    border:2px solid var(--line);
+    background:var(--card);
+    color:var(--ink);
+    padding:12px 0;
+    width:56px;
+    border-radius:14px;
+    font-size:17px;
+    font-weight:800;
+    font-family:inherit;
+    text-align:center;
+    cursor:pointer;
+    transition:transform .12s ease, border-color .12s ease, background .12s ease, color .12s ease;
+  }
+  .chip.wide{width:auto;padding:12px 16px;}
+  .chip:active{transform:scale(.94);}
+  .chip.selected{
+    background:var(--coral);
+    border-color:var(--coral-dark);
+    color:#fff;
+  }
+  .start-btn{
+    width:100%;
+    padding:18px;
+    border:none;
+    border-radius:18px;
+    background:linear-gradient(180deg, var(--coral), var(--coral-dark));
+    color:#fff;
+    font-family:'Jua',sans-serif;
+    font-size:clamp(18px,5vw,22px);
+    box-shadow:var(--shadow-lg);
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .start-btn:active{transform:translateY(2px);}
+  .hint{font-size:12.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
+
+  .secret-panel{display:none;}
+  .secret-panel.open{display:block;}
+  .secret-panel .pair-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+  .secret-panel select{flex:1;min-width:110px;padding:10px;border-radius:10px;border:2px solid var(--line);font-family:inherit;background:var(--card);color:var(--ink);}
+  .add-pair-btn{
+    padding:10px 14px;border-radius:10px;border:none;background:var(--ink);color:#fff;font-weight:700;cursor:pointer;
+  }
+  .pair-list{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-wrap:wrap;gap:8px;}
+  .pair-list li{
+    background:#FFECEA;color:var(--coral-dark);border-radius:20px;padding:6px 10px;font-size:13px;font-weight:700;
+    display:flex;align-items:center;gap:6px;
+  }
+  :root[data-theme="dark"] .pair-list li,
+  @media (prefers-color-scheme: dark){ .pair-list li{background:#3a2a2a;} }
+  .pair-list li button{border:none;background:transparent;color:inherit;font-weight:900;cursor:pointer;font-size:14px;}
+
+  /* ---------- draw screen ---------- */
+  #screen-draw{padding:14px 10px 10px;justify-content:flex-start;}
+  .draw-topbar{width:100%;display:flex;justify-content:space-between;align-items:center;max-width:1200px;margin:0 auto 10px;}
+  .back-mini{background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:6px;}
+  .progress-count{font-family:'Jua',sans-serif;color:var(--ink-soft);font-size:14px;}
+
+  .group-cards{
+    width:100%;max-width:1200px;margin:0 auto 22px;
+    display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+  }
+  .group-card{
+    background:var(--card);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:10px 12px;
+    min-width:118px;
+    text-align:center;
+    border:3px solid transparent;
+    transition:border-color .2s ease, transform .2s ease;
+  }
+  .group-card .g-emoji{font-size:clamp(22px,3.4vw,32px);display:block;}
+  .group-card .g-name{font-family:'Jua',sans-serif;font-size:clamp(13px,2vw,16px);margin-top:2px;}
+  .group-card .g-count{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .group-card.lit{transform:translateY(-4px) scale(1.06);}
+
+  .stage{
+    width:100%;max-width:1200px;margin:0 auto;
+    flex:1;
+    display:flex;align-items:center;justify-content:center;
+    min-height:38vh;
+    position:relative;
+  }
+  .name-flash{
+    font-family:'Jua',sans-serif;
+    font-size:clamp(48px,11vw,120px);
+    color:var(--ink);
+    text-align:center;
+    opacity:0;
+    transform:scale(.7);
+  }
+  .name-flash.show{
+    animation:popIn .35s cubic-bezier(.2,1.4,.4,1) forwards;
+  }
+  .name-flash.fly{
+    animation:flyOut .5s ease-in forwards;
+  }
+  @keyframes popIn{
+    0%{opacity:0;transform:scale(.5);}
+    60%{opacity:1;transform:scale(1.08);}
+    100%{opacity:1;transform:scale(1);}
+  }
+  @keyframes flyOut{
+    0%{opacity:1;transform:scale(1) translateY(0);}
+    100%{opacity:0;transform:scale(.3) translateY(-140px);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .name-flash.show, .name-flash.fly{animation:none;opacity:1;transform:none;}
+  }
+  .skip-btn{
+    position:absolute;bottom:6px;right:6px;
+    background:var(--card);border:2px solid var(--line);color:var(--ink-soft);
+    border-radius:12px;padding:10px 14px;font-size:13px;cursor:pointer;
+  }
+
+  /* ---------- result screen ---------- */
+  .result-wrap{width:100%;max-width:1100px;margin:0 auto;}
+  h2.result-title{
+    text-align:center;font-family:'Jua',sans-serif;font-size:clamp(24px,5vw,34px);
+    color:var(--coral-dark);margin:6px 0 20px;
+  }
+  .result-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;
+  }
+  .result-card{
+    background:var(--card);border-radius:20px;box-shadow:var(--shadow);
+    padding:16px;
+  }
+  .result-card .rc-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .result-card .rc-emoji{font-size:30px;}
+  .result-card .rc-name{font-family:'Jua',sans-serif;font-size:19px;}
+  .result-card .rc-members{display:flex;flex-wrap:wrap;gap:6px;}
+  .member-chip{
+    background:var(--sky-top);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:700;
+  }
+  .member-chip.leader{
+    background:var(--sun);color:#5a4200;
+  }
+  .result-actions{display:flex;gap:10px;justify-content:center;margin-top:26px;flex-wrap:wrap;}
+  .result-actions button{
+    padding:14px 20px;border-radius:14px;border:none;font-family:'Jua',sans-serif;font-size:15px;cursor:pointer;
+  }
+  .btn-reroll{background:var(--coral);color:#fff;box-shadow:var(--shadow);}
+  .btn-restart{background:var(--card);color:var(--ink);border:2px solid var(--line) !important;}
+  .btn-print{background:var(--leaf);color:#fff;}
+
+  @media print{
+    body{background:#fff;}
+    #screen-setup,#screen-draw,.result-actions,.back-mini{display:none !important;}
+    #screen-result{display:flex !important;}
+    .result-card{break-inside:avoid;}
+  }
+
+  ::selection{background:var(--coral);color:#fff;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ SETUP SCREEN ============ -->
+  <section id="screen-setup" class="screen active">
+    <div class="setup-wrap">
+      <h1 class="title" id="titleClickTarget">🎲 조 편성기</h1>
+      <p class="subtitle">반을 고르고 조 개수와 인원수를 정한 뒤 추첨을 시작하세요</p>
+
+      <div class="field">
+        <label class="field-title">1. 명단 선택</label>
+        <select id="classSelect"></select>
+        <textarea id="customRoster" placeholder="한 줄에 한 명씩 이름을 입력하세요" style="display:none;"></textarea>
+        <div class="hint" id="rosterCountHint"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-title">2. 조 개수 (최대 8조)</label>
+        <div class="chip-row" id="groupCountRow"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-title">3. 조당 인원수</label>
+        <div class="chip-row" id="groupSizeRow"></div>
+        <div class="hint">인원이 딱 맞지 않으면 남는 인원은 여러 조에 1명씩 자동으로 추가됩니다.</div>
+      </div>
+
+      <div class="field secret-panel" id="secretPanel">
+        <label class="field-title">🚫 특정 학생 짝 금지 (선택)</label>
+        <div class="pair-row">
+          <select id="pairA"></select>
+          <span>↔</span>
+          <select id="pairB"></select>
+          <button class="add-pair-btn" id="addPairBtn" type="button">추가</button>
+        </div>
+        <ul class="pair-list" id="pairList"></ul>
+      </div>
+
+      <button class="start-btn" id="startBtn">조추첨 시작</button>
+    </div>
+  </section>
+
+  <!-- ============ DRAW SCREEN ============ -->
+  <section id="screen-draw" class="screen">
+    <div class="draw-topbar">
+      <button class="back-mini" id="backFromDraw">← 설정으로</button>
+      <div class="progress-count" id="progressCount"></div>
+    </div>
+    <div class="group-cards" id="drawGroupCards"></div>
+    <div class="stage">
+      <div class="name-flash" id="nameFlash"></div>
+      <button class="skip-btn" id="skipBtn">건너뛰기 →</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT SCREEN ============ -->
+  <section id="screen-result" class="screen">
+    <div class="result-wrap">
+      <h2 class="result-title">🎉 조 편성 완료!</h2>
+      <div class="result-grid" id="resultGrid"></div>
+      <div class="result-actions">
+        <button class="btn-reroll" id="rerollBtn">🔄 다시 뽑기</button>
+        <button class="btn-restart" id="restartBtn">⚙️ 처음으로</button>
+        <button class="btn-print" id="printBtn">🖨️ 인쇄 / 저장</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="../_lib/lock.js"></script>
+<script>
+RosterLock.open('_명단.enc.json').then(function(DATA){ main(DATA); });
+function main(DATA){
+  "use strict";
+
+  /* ---------------- preset rosters ---------------- */
+  // 명단은 잠금 파일(_명단.enc.json)에서 불러옵니다. 2-7반이 먼저 나오도록 정렬.
+  var PREF = ['g27','g24','g23'];
+  var CLASS_DATA = {};
+  DATA.groups.slice().sort(function(a,b){
+    var ia = PREF.indexOf(a.id), ib = PREF.indexOf(b.id);
+    return (ia<0?99:ia) - (ib<0?99:ib);
+  }).forEach(function(g){
+    var names = g.raw.map(function(r){ return r[2].replace(/\s*\(.*?\)\s*/g,''); });
+    CLASS_DATA[g.id] = {
+      label: '사회문제 탐구 · ' + g.name.replace(/^사문탐\s*/,'') + ' 기준 (' + names.length + '명)',
+      students: names
+    };
+  });
+
+  var ANIMALS = [
+    {name:"토끼조", emoji:"🐰"},
+    {name:"코알라조", emoji:"🐨"},
+    {name:"여우조", emoji:"🦊"},
+    {name:"판다조", emoji:"🐼"},
+    {name:"사자조", emoji:"🦁"},
+    {name:"호랑이조", emoji:"🐯"},
+    {name:"개구리조", emoji:"🐸"},
+    {name:"펭귄조", emoji:"🐧"}
+  ];
+
+  /* ---------------- state ---------------- */
+  var state = {
+    roster: [],
+    groupCount: 4,
+    sizeMode: 4, // 3|4|5|6|'random'
+    bannedPairs: [], // [[a,b], ...]
+    groups: null,    // computed at draw time
+    order: null,     // reveal order queue
+    revealIndex: 0
+  };
+
+  /* ---------------- helpers ---------------- */
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+  function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+  function el(id){ return document.getElementById(id); }
+
+  /* ---------------- build setup UI ---------------- */
+  var classSelect = el('classSelect');
+  Object.keys(CLASS_DATA).forEach(function(key){
+    var opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = CLASS_DATA[key].label;
+    classSelect.appendChild(opt);
+  });
+  var customOpt = document.createElement('option');
+  customOpt.value = 'custom';
+  customOpt.textContent = '직접 입력';
+  classSelect.appendChild(customOpt);
+
+  var customRoster = el('customRoster');
+
+  function currentRoster(){
+    if(classSelect.value === 'custom'){
+      return customRoster.value.split(/[\n,]/).map(function(s){return s.trim();}).filter(Boolean);
+    }
+    return CLASS_DATA[classSelect.value].students.slice();
+  }
+
+  function refreshRosterUI(){
+    customRoster.style.display = classSelect.value === 'custom' ? 'block' : 'none';
+    state.roster = currentRoster();
+    el('rosterCountHint').textContent = state.roster.length ? ('총 ' + state.roster.length + '명') : '명단을 입력해주세요';
+    refreshPairSelects();
+  }
+  classSelect.addEventListener('change', refreshRosterUI);
+  customRoster.addEventListener('input', refreshRosterUI);
+
+  // group count chips (2-8)
+  var groupCountRow = el('groupCountRow');
+  for(var gc=2; gc<=8; gc++){
+    (function(n){
+      var b = document.createElement('button');
+      b.type='button'; b.className='chip'; b.textContent=n;
+      if(n===state.groupCount) b.classList.add('selected');
+      b.addEventListener('click', function(){
+        Array.prototype.forEach.call(groupCountRow.children, function(c){c.classList.remove('selected');});
+        b.classList.add('selected');
+        state.groupCount = n;
+      });
+      groupCountRow.appendChild(b);
+    })(gc);
+  }
+
+  // group size chips
+  var groupSizeRow = el('groupSizeRow');
+  var sizeOptions = [3,4,5,6,'random'];
+  sizeOptions.forEach(function(v){
+    var b = document.createElement('button');
+    b.type='button'; b.className='chip wide';
+    b.textContent = v==='random' ? '랜덤(3~6)' : (v+'명');
+    if(v===state.sizeMode) b.classList.add('selected');
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(groupSizeRow.children, function(c){c.classList.remove('selected');});
+      b.classList.add('selected');
+      state.sizeMode = v;
+    });
+    groupSizeRow.appendChild(b);
+  });
+
+  /* ---------------- secret pairing panel ---------------- */
+  var clickStamps = [];
+  el('titleClickTarget').addEventListener('click', function(){
+    var now = Date.now();
+    clickStamps.push(now);
+    clickStamps = clickStamps.filter(function(t){ return now - t < 3000; });
+    if(clickStamps.length >= 5){
+      el('secretPanel').classList.toggle('open');
+      clickStamps = [];
+    }
+  });
+
+  var pairA = el('pairA'), pairB = el('pairB');
+  function refreshPairSelects(){
+    [pairA,pairB].forEach(function(sel){
+      sel.innerHTML='';
+      state.roster.forEach(function(name){
+        var o=document.createElement('option'); o.value=name; o.textContent=name; sel.appendChild(o);
+      });
+    });
+  }
+  function renderPairList(){
+    var ul = el('pairList');
+    ul.innerHTML='';
+    state.bannedPairs.forEach(function(pair, idx){
+      var li = document.createElement('li');
+      li.textContent = pair[0] + ' ↔ ' + pair[1] + ' ';
+      var btn = document.createElement('button');
+      btn.textContent='×';
+      btn.addEventListener('click', function(){
+        state.bannedPairs.splice(idx,1);
+        renderPairList();
+      });
+      li.appendChild(btn);
+      ul.appendChild(li);
+    });
+  }
+  el('addPairBtn').addEventListener('click', function(){
+    var a = pairA.value, b = pairB.value;
+    if(!a || !b || a===b) return;
+    var exists = state.bannedPairs.some(function(p){
+      return (p[0]===a && p[1]===b) || (p[0]===b && p[1]===a);
+    });
+    if(!exists){ state.bannedPairs.push([a,b]); renderPairList(); }
+  });
+
+  // now that every element/function above is wired up, do the initial render
+  classSelect.value = Object.keys(CLASS_DATA)[0];
+  refreshRosterUI();
+
+  /* ---------------- assignment algorithm ---------------- */
+  function computeSizes(n, groupCount, sizeMode){
+    var sizes;
+    if(sizeMode === 'random'){
+      sizes = [];
+      for(var i=0;i<groupCount;i++) sizes.push(randInt(3,6));
+    } else {
+      sizes = new Array(groupCount).fill(sizeMode);
+    }
+    var sum = sizes.reduce(function(a,b){return a+b;},0);
+    var diff = n - sum;
+    if(diff > 0){
+      var order = shuffle(sizes.map(function(_,i){return i;}));
+      var k=0;
+      while(diff>0){ sizes[order[k%groupCount]] += 1; diff--; k++; }
+    } else if(diff < 0){
+      var need = -diff;
+      var order2 = shuffle(sizes.map(function(_,i){return i;}));
+      var guard=0, k2=0;
+      while(need>0 && guard < 5000){
+        var idx = order2[k2%groupCount];
+        if(sizes[idx] > 1){ sizes[idx]--; need--; }
+        k2++; guard++;
+      }
+    }
+    return sizes;
+  }
+
+  function isBanned(name, groupMembers){
+    return state.bannedPairs.some(function(pair){
+      if(pair[0]===name) return groupMembers.indexOf(pair[1]) !== -1;
+      if(pair[1]===name) return groupMembers.indexOf(pair[0]) !== -1;
+      return false;
+    });
+  }
+
+  function assign(){
+    var roster = state.roster;
+    var n = roster.length;
+    var groupCount = Math.min(state.groupCount, Math.max(1,n));
+    var sizes = computeSizes(n, groupCount, state.sizeMode);
+    var animalPick = shuffle(ANIMALS).slice(0, groupCount);
+    var groups = animalPick.map(function(a, i){
+      return { emoji:a.emoji, name:a.name, capacity: sizes[i], members: [] };
+    });
+
+    var shuffled = shuffle(roster);
+    shuffled.forEach(function(student){
+      var candidates = [];
+      groups.forEach(function(g, idx){
+        if(g.members.length < g.capacity && !isBanned(student, g.members)) candidates.push(idx);
+      });
+      if(candidates.length === 0){
+        groups.forEach(function(g, idx){ if(g.members.length < g.capacity) candidates.push(idx); });
+      }
+      var pick = candidates[randInt(0, candidates.length-1)];
+      groups[pick].members.push(student);
+    });
+
+    // leader per group
+    groups.forEach(function(g){
+      g.leader = g.members.length ? g.members[randInt(0, g.members.length-1)] : null;
+    });
+
+    state.groups = groups;
+
+    // reveal order: flat list of {name, groupIndex}
+    var flat = [];
+    groups.forEach(function(g, gi){
+      g.members.forEach(function(name){ flat.push({name:name, groupIndex:gi}); });
+    });
+    state.order = shuffle(flat);
+    state.revealIndex = 0;
+  }
+
+  /* ---------------- screens ---------------- */
+  function showScreen(id){
+    ['screen-setup','screen-draw','screen-result'].forEach(function(s){
+      el(s).classList.toggle('active', s===id);
+    });
+  }
+
+  el('startBtn').addEventListener('click', function(){
+    state.roster = currentRoster();
+    if(state.roster.length < 2){ el('rosterCountHint').textContent = '명단을 2명 이상 입력해주세요'; return; }
+    assign();
+    buildDrawCards();
+    showScreen('screen-draw');
+    startReveal();
+  });
+
+  el('backFromDraw').addEventListener('click', function(){
+    stopReveal();
+    showScreen('screen-setup');
+  });
+
+  /* ---------------- draw screen render ---------------- */
+  function buildDrawCards(){
+    var wrap = el('drawGroupCards');
+    wrap.innerHTML='';
+    state.groups.forEach(function(g, idx){
+      var card = document.createElement('div');
+      card.className='group-card';
+      card.id='gcard-'+idx;
+      card.innerHTML =
+        '<span class="g-emoji">'+g.emoji+'</span>'+
+        '<div class="g-name">'+g.name+'</div>'+
+        '<div class="g-count" id="gcount-'+idx+'">0 / '+g.capacity+'</div>';
+      wrap.appendChild(card);
+    });
+    el('progressCount').textContent = '0 / ' + state.order.length;
+  }
+
+  /* ---------------- sound ---------------- */
+  var audioCtx = null;
+  function playSwish(){
+    try{
+      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var duration = 0.28;
+      var bufferSize = audioCtx.sampleRate * duration;
+      var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      var data = buffer.getChannelData(0);
+      for(var i=0;i<bufferSize;i++){ data[i] = (Math.random()*2-1) * (1 - i/bufferSize); }
+      var noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      var filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1800, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + duration);
+      filter.Q.value = 0.8;
+      var gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      noise.connect(filter).connect(gain).connect(audioCtx.destination);
+      noise.start();
+    }catch(e){ /* audio unsupported, ignore */ }
+  }
+
+  /* ---------------- reveal loop ---------------- */
+  var revealTimer = null;
+
+  function startReveal(){
+    revealTimer = setTimeout(revealNext, 500);
+  }
+  function stopReveal(){
+    if(revealTimer) clearTimeout(revealTimer);
+    revealTimer = null;
+  }
+  el('skipBtn').addEventListener('click', function(){
+    stopReveal();
+    finishAllInstant();
+  });
+
+  function finishAllInstant(){
+    while(state.revealIndex < state.order.length){
+      var item = state.order[state.revealIndex];
+      el('gcount-'+item.groupIndex).textContent = (getCountSoFar(item.groupIndex)+1) + ' / ' + state.groups[item.groupIndex].capacity;
+      state.revealIndex++;
+    }
+    // recompute counts cleanly
+    state.groups.forEach(function(g, idx){
+      el('gcount-'+idx).textContent = g.members.length + ' / ' + g.capacity;
+    });
+    el('progressCount').textContent = state.order.length + ' / ' + state.order.length;
+    goToResult();
+  }
+
+  function getCountSoFar(groupIndex){
+    var c = 0;
+    for(var i=0;i<state.revealIndex;i++){ if(state.order[i].groupIndex===groupIndex) c++; }
+    return c;
+  }
+
+  function revealNext(){
+    if(state.revealIndex >= state.order.length){
+      setTimeout(goToResult, 500);
+      return;
+    }
+    var item = state.order[state.revealIndex];
+    playSwish();
+    var flash = el('nameFlash');
+    flash.textContent = item.name;
+    flash.className = 'name-flash show';
+
+    var card = el('gcard-'+item.groupIndex);
+    card.classList.add('lit');
+
+    setTimeout(function(){
+      flash.className = 'name-flash fly';
+      var countSoFar = getCountSoFar(item.groupIndex) + 1;
+      el('gcount-'+item.groupIndex).textContent = countSoFar + ' / ' + state.groups[item.groupIndex].capacity;
+      card.classList.remove('lit');
+    }, 650);
+
+    state.revealIndex++;
+    el('progressCount').textContent = state.revealIndex + ' / ' + state.order.length;
+
+    revealTimer = setTimeout(revealNext, 1000);
+  }
+
+  /* ---------------- result screen ---------------- */
+  function goToResult(){
+    var grid = el('resultGrid');
+    grid.innerHTML='';
+    state.groups.forEach(function(g){
+      var card = document.createElement('div');
+      card.className='result-card';
+      var membersHtml = g.members.map(function(m){
+        var isLeader = m === g.leader;
+        return '<span class="member-chip'+(isLeader?' leader':'')+'">'+(isLeader?'👑 ':'')+m+'</span>';
+      }).join('');
+      card.innerHTML =
+        '<div class="rc-head"><span class="rc-emoji">'+g.emoji+'</span><span class="rc-name">'+g.name+'</span></div>'+
+        '<div class="rc-members">'+membersHtml+'</div>';
+      grid.appendChild(card);
+    });
+    showScreen('screen-result');
+  }
+
+  el('rerollBtn').addEventListener('click', function(){
+    assign();
+    buildDrawCards();
+    showScreen('screen-draw');
+    startReveal();
+  });
+  el('restartBtn').addEventListener('click', function(){
+    showScreen('screen-setup');
+  });
+  el('printBtn').addEventListener('click', function(){
+    window.print();
+  });
+
+}
+</script>
+</body>
+</html>

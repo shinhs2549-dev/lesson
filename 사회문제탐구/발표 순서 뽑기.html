@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>발표 순서 뽑기</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#f1f5f9; --sub:#94a3b8;
+    --accent:#f59e0b; --accent2:#38bdf8; --ok:#22c55e; --danger:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;min-height:100vh}
+  header{text-align:center;padding:24px 16px 8px}
+  header h1{margin:0;font-size:2rem}
+  header p{margin:6px 0 0;color:var(--sub)}
+  main{max-width:1200px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1.2fr 1fr;gap:20px}
+  @media(max-width:850px){main{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .panel h2{margin:0 0 12px;font-size:1.1rem;color:var(--sub);font-weight:600}
+
+  .stage{text-align:center}
+  .display{
+    background:#0b1222;border:2px solid var(--line);border-radius:20px;
+    padding:40px 12px;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  }
+  .display .num{font-size:1.6rem;color:var(--accent2);font-weight:700}
+  .display .name{font-size:4.2rem;font-weight:800;letter-spacing:2px}
+  .display.spinning .name{color:var(--sub)}
+  .display.done{border-color:var(--accent);box-shadow:0 0 30px rgba(245,158,11,.35)}
+  .display.done .name{color:var(--accent)}
+  .display .placeholder{font-size:1.5rem;color:var(--sub)}
+  .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  button{
+    font:inherit;cursor:pointer;border:none;border-radius:12px;padding:14px 22px;font-weight:700;font-size:1.05rem;
+    background:var(--line);color:var(--text);transition:transform .1s,opacity .2s
+  }
+  button:hover:not(:disabled){transform:translateY(-1px)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.primary{background:var(--accent);color:#1f1300;font-size:1.3rem;padding:16px 36px}
+  button.danger{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+  .hint{margin-top:10px;color:var(--sub);font-size:.85rem}
+  .count{margin-top:14px;color:var(--sub)}
+
+  ol.order{list-style:none;margin:0;padding:0;max-height:520px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+  ol.order li{display:flex;align-items:center;gap:12px;background:#0b1222;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:1.05rem}
+  ol.order li.new{border-color:var(--accent);animation:pop .5s}
+  ol.order .rank{background:var(--accent);color:#1f1300;font-weight:800;border-radius:50%;min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.95rem}
+  ol.order .cls{color:var(--accent2);font-size:.9rem;min-width:70px}
+  ol.order .who{font-weight:700}
+  .empty{color:var(--sub);text-align:center;padding:30px 0}
+  @keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+
+  .tabs{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .tab{background:var(--card);border:1px solid var(--line);color:var(--sub);padding:12px 20px;border-radius:12px;font-size:1.05rem}
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#1f1300}
+  .tab small{display:block;font-weight:500;font-size:.78rem;opacity:.8;margin-top:2px}
+  .full{grid-column:1/-1}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    user-select:none;cursor:pointer;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#0b1222;font-size:.95rem
+  }
+  .chip small{color:var(--sub);margin-right:4px}
+  .chip.drawn{opacity:.35;text-decoration:line-through;cursor:default}
+  .chip.absent{border-color:var(--danger);color:var(--danger);opacity:.7}
+  .legend{color:var(--sub);font-size:.85rem;margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎲 발표 순서 뽑기</h1>
+  <p id="subtitle"></p>
+</header>
+
+<main>
+  <nav class="tabs" id="tabs"></nav>
+  <section class="panel stage">
+    <h2>지금 뽑기</h2>
+    <div class="display" id="display">
+      <div class="placeholder">버튼을 눌러 다음 발표자를 뽑으세요</div>
+    </div>
+    <div class="btns">
+      <button class="primary" id="drawBtn">다음 발표자 뽑기</button>
+    </div>
+    <div class="btns">
+      <button id="allBtn">한 번에 전체 순서 정하기</button>
+      <button id="undoBtn">마지막 취소</button>
+      <button class="danger" id="resetBtn">처음부터 다시</button>
+    </div>
+    <div class="hint">스페이스바로도 뽑을 수 있어요</div>
+    <div class="count" id="count"></div>
+  </section>
+
+  <section class="panel">
+    <h2>발표 순서</h2>
+    <ol class="order" id="order"></ol>
+  </section>
+
+  <section class="panel full">
+    <h2>명단 (결석자는 클릭해서 제외)</h2>
+    <div class="chips" id="chips"></div>
+    <div class="legend">회색 취소선 = 이미 뽑힘 · 빨간색 = 결석(뽑기 제외). 새로고침해도 진행 상황이 유지됩니다.</div>
+  </section>
+</main>
+
+<script src="../_lib/lock.js"></script>
+<script>
+RosterLock.open('_명단.enc.json').then(function(DATA){ main(DATA.groups); });
+function main(GROUPS){
+GROUPS.forEach(g => {
+  g.students = g.raw.map(([c,n,name]) => ({id:`${c}-${n}`, cls:c, num:n, name}));
+  g.byId = Object.fromEntries(g.students.map(s => [s.id, s]));
+});
+const KEY = "presentation_order_v2";
+
+let store = { current:"g23", groups:{} };
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.groups) store = s; } catch(e){}
+// 이전 버전(2-4반 한 개짜리) 진행 상황 이어받기
+if (!store.groups.g24) {
+  try {
+    const old = JSON.parse(localStorage.getItem("presentation_order_v1"));
+    if (old && old.order && old.absent) store.groups.g24 = old;
+  } catch(e){}
+}
+GROUPS.forEach(g => { if (!store.groups[g.id]) store.groups[g.id] = {order:[], absent:[]}; });
+if (!GROUPS.some(g => g.id === store.current)) store.current = GROUPS[0].id;
+
+let group = GROUPS.find(g => g.id === store.current);
+let state = store.groups[group.id];
+let STUDENTS = group.students, byId = group.byId;
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} };
+
+function switchGroup(id){
+  if (spinning) return;
+  store.current = id; save();
+  group = GROUPS.find(g => g.id === id);
+  state = store.groups[id];
+  STUDENTS = group.students; byId = group.byId;
+  display.className = "display";
+  display.innerHTML = '<div class="placeholder">버튼을 눌러 다음 발표자를 뽑으세요</div>';
+  render();
+}
+
+let spinning = false;
+
+const $ = id => document.getElementById(id);
+const display = $("display");
+
+function randInt(n){
+  const a = new Uint32Array(1);
+  const limit = Math.floor(4294967296 / n) * n;
+  do { crypto.getRandomValues(a); } while (a[0] >= limit);
+  return a[0] % n;
+}
+function remaining(){
+  return STUDENTS.filter(s => !state.order.includes(s.id) && !state.absent.includes(s.id));
+}
+function label(s){ return `${s.cls}반 ${s.num}번`; }
+
+function render(newId){
+  $("tabs").innerHTML = GROUPS.map(g => `<button class="tab ${g.id===group.id?'active':''}" data-g="${g.id}">${g.name}<small>${g.note} · ${g.students.length}명</small></button>`).join("");
+  $("subtitle").textContent = `${group.name} (${group.note}) 발표 순서를 무작위로 정합니다`;
+  // order list
+  const ol = $("order");
+  if (!state.order.length) {
+    ol.innerHTML = '<div class="empty">아직 뽑힌 사람이 없어요</div>';
+  } else {
+    ol.innerHTML = state.order.map((id,i) => {
+      const s = byId[id];
+      return `<li class="${id===newId?'new':''}"><span class="rank">${i+1}</span><span class="cls">${label(s)}</span><span class="who">${s.name}</span></li>`;
+    }).join("");
+    ol.scrollTop = ol.scrollHeight;
+  }
+  // chips
+  $("chips").innerHTML = STUDENTS.map(s => {
+    const drawn = state.order.includes(s.id);
+    const abs = state.absent.includes(s.id);
+    return `<span class="chip ${drawn?'drawn':''} ${abs?'absent':''}" data-id="${s.id}"><small>${s.cls}-${s.num}</small>${s.name}</span>`;
+  }).join("");
+  // buttons / count
+  const left = remaining().length;
+  $("count").textContent = `남은 인원 ${left}명 / 뽑힌 인원 ${state.order.length}명` + (state.absent.length ? ` / 결석 ${state.absent.length}명` : "");
+  $("drawBtn").disabled = spinning || left === 0;
+  $("allBtn").disabled = spinning || left === 0;
+  $("undoBtn").disabled = spinning || state.order.length === 0;
+  $("resetBtn").disabled = spinning;
+  if (left === 0 && state.order.length > 0 && !spinning) {
+    display.className = "display";
+    display.innerHTML = '<div class="placeholder">🎉 모든 발표 순서가 정해졌어요!</div>';
+  }
+}
+
+function showPerson(s, cls){
+  display.className = "display " + (cls||"");
+  display.innerHTML = `<div class="num">${label(s)}</div><div class="name">${s.name}</div>`;
+}
+
+function draw(){
+  const pool = remaining();
+  if (spinning || !pool.length) return;
+  spinning = true; render();
+  const winner = pool[randInt(pool.length)];
+  let ticks = 0;
+  const total = 28;
+  (function step(){
+    if (ticks < total) {
+      showPerson(pool[randInt(pool.length)], "spinning");
+      ticks++;
+      setTimeout(step, 40 + ticks * ticks * 0.22); // 점점 느려짐
+    } else {
+      state.order.push(winner.id); save();
+      spinning = false;
+      showPerson(winner, "done");
+      render(winner.id);
+    }
+  })();
+}
+
+function drawAll(){
+  const pool = remaining();
+  if (spinning || !pool.length) return;
+  if (!confirm(`남은 ${pool.length}명의 순서를 한 번에 정할까요?`)) return;
+  // Fisher-Yates
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = randInt(i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  pool.forEach(s => state.order.push(s.id));
+  save(); render();
+}
+
+function undo(){
+  if (spinning || !state.order.length) return;
+  state.order.pop(); save();
+  display.className = "display";
+  display.innerHTML = '<div class="placeholder">마지막 뽑기를 취소했어요</div>';
+  render();
+}
+
+function reset(){
+  if (spinning) return;
+  if (!confirm("뽑은 순서를 모두 지우고 처음부터 다시 할까요? (결석 표시는 유지됩니다. 현재 탭의 반만 초기화)")) return;
+  state.order = []; save();
+  display.className = "display";
+  display.innerHTML = '<div class="placeholder">버튼을 눌러 다음 발표자를 뽑으세요</div>';
+  render();
+}
+
+$("chips").addEventListener("click", e => {
+  const chip = e.target.closest(".chip");
+  if (!chip || spinning) return;
+  const id = chip.dataset.id;
+  if (state.order.includes(id)) return;
+  const i = state.absent.indexOf(id);
+  if (i >= 0) state.absent.splice(i,1); else state.absent.push(id);
+  save(); render();
+});
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest(".tab"); if (b) switchGroup(b.dataset.g);
+});
+$("drawBtn").onclick = draw;
+$("allBtn").onclick = drawAll;
+$("undoBtn").onclick = undo;
+$("resetBtn").onclick = reset;
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); draw(); }
+});
+
+render();
+}
+</script>
+</body>
+</html>

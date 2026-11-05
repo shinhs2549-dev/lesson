@@ -44,12 +44,31 @@
 
   function storeKeyName(box){ return 'rosterKey:' + box.salt; }
 
-  function tryStored(box){
+  function storedKey(box){
     var raw = ls(storeKeyName(box));
-    if (!raw) return Promise.reject();
-    return crypto.subtle.importKey('raw', unb64(raw), 'AES-GCM', true, ['decrypt'])
+    if (!raw) return Promise.reject(new Error('nokey'));
+    return crypto.subtle.importKey('raw', unb64(raw), 'AES-GCM', true, ['encrypt','decrypt']);
+  }
+  function tryStored(box){
+    return storedKey(box)
       .then(function(key){ return decryptWith(key, box); })
-      .catch(function(e){ ls(storeKeyName(box), null); throw e; });
+      .catch(function(e){ if (!e || e.message !== 'nokey') ls(storeKeyName(box), null); throw e; });
+  }
+
+  // 편집기용: 이 기기에 기억된 열쇠(또는 비밀번호)로 열고, 같은 열쇠로 다시 잠글 수 있게 key도 돌려줌
+  function openForEdit(box, pw){
+    var keyP = pw ? deriveKey(pw, unb64(box.salt), box.iter || ITER_DEFAULT) : storedKey(box);
+    return keyP.then(function(key){
+      return decryptWith(key, box).then(function(data){ return { data:data, key:key }; });
+    });
+  }
+  // 같은 열쇠·같은 salt로 다시 잠그기 → 칠판에서 비밀번호를 다시 묻지 않음
+  function reencrypt(data, key, oldBox){
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var plain = new TextEncoder().encode(JSON.stringify(data));
+    return crypto.subtle.encrypt({ name:'AES-GCM', iv:iv }, key, plain).then(function(ct){
+      return { v:1, iter:oldBox.iter || ITER_DEFAULT, salt:oldBox.salt, iv:b64(iv), ct:b64(ct) };
+    });
   }
 
   function unlockWithPassword(box, pw, remember){
@@ -133,5 +152,6 @@
     } catch(e){}
   }
 
-  window.RosterLock = { open:open, encrypt:encrypt, unlockWithPassword:unlockWithPassword, forget:forget };
+  window.RosterLock = { open:open, encrypt:encrypt, unlockWithPassword:unlockWithPassword,
+    openForEdit:openForEdit, reencrypt:reencrypt, forget:forget };
 })();

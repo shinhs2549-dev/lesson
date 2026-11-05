@@ -20,6 +20,8 @@
   .msg{margin-top:12px;font-weight:700;min-height:20px}
   .ok{color:#1f6f5c}.bad{color:#d9572b}
   code{background:#ece7dc;padding:1px 6px;border-radius:5px}
+  label.show{display:flex;gap:8px;align-items:center;font-weight:500}
+  label.show input{width:18px;height:18px}
   .help{font-size:14px;color:#55636d;line-height:1.7;margin:8px 0 0}
 </style>
 </head>
@@ -32,9 +34,10 @@
   <div class="card">
     <h2>1. 현재 명단 불러오기</h2>
     <label for="path">명단 파일 위치</label>
-    <input id="path" value="../사문탐/_명단.enc.json">
-    <label for="pw">현재 비밀번호</label>
-    <input id="pw" type="password">
+    <input id="path" value="../사회문제탐구/_명단.enc.json">
+    <label for="pw">현재 비밀번호 <span style="font-weight:500">(이 기기에서 조 편성기·발표 순서를 이미 열었다면 비워 둬도 됩니다)</span></label>
+    <input id="pw" type="password" autocomplete="off">
+    <label class="show"><input type="checkbox" id="showPw"> 입력한 비밀번호 보이기</label>
     <button id="loadBtn" type="button">불러오기</button>
     <button id="blankBtn" class="sec" type="button">빈 양식으로 새로 만들기</button>
     <div class="msg" id="loadMsg"></div>
@@ -52,13 +55,13 @@
 
   <div class="card">
     <h2>3. 잠금 파일 만들기</h2>
-    <label for="pw2">비밀번호 (그대로 쓰려면 현재 비밀번호를 다시 입력 — 이 경우 칠판에서 다시 묻지 않음)</label>
-    <input id="pw2" type="password">
-    <label for="pw3">비밀번호 확인</label>
-    <input id="pw3" type="password">
+    <label for="pw2">새 비밀번호 <span style="font-weight:500">(비밀번호를 바꾸지 않으려면 두 칸 모두 비워 두세요 — 칠판에서 다시 묻지 않아요)</span></label>
+    <input id="pw2" type="password" autocomplete="new-password">
+    <label for="pw3">새 비밀번호 확인</label>
+    <input id="pw3" type="password" autocomplete="new-password">
     <button id="saveBtn" type="button">잠금 파일 내려받기</button>
     <div class="msg" id="saveMsg"></div>
-    <p class="help">내려받은 <code>_명단.enc.json</code>을 GitHub의 <b>사문탐</b> 폴더에 올리면(같은 이름 덮어쓰기) 1~2분 뒤 반영됩니다.
+    <p class="help">내려받은 <code>_명단.enc.json</code>을 GitHub의 <b>사회문제탐구</b> 폴더에 올리면(같은 이름 덮어쓰기) 1~2분 뒤 반영됩니다.
     비밀번호를 바꿨다면 각 칠판에서 한 번씩 새 비밀번호를 입력해야 해요.</p>
   </div>
 </div>
@@ -67,7 +70,7 @@
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  var loaded = null; // { box, pw } 불러온 파일과 그때 쓴 비밀번호
+  var loaded = null; // { box, key } 불러온 파일과 그 열쇠
   function msg(id, text, ok){ var m=$(id); m.textContent=text; m.className='msg ' + (ok?'ok':'bad'); }
 
   function toText(data){
@@ -97,42 +100,65 @@
     return { data:{ groups:groups }, errors:errors };
   }
 
+  try { var lastPath = localStorage.getItem('rosterEditorPath'); if (lastPath) $('path').value = lastPath; } catch(e){}
+
+  $('showPw').onchange = function(){ $('pw').type = this.checked ? 'text' : 'password'; };
+
   $('loadBtn').onclick = function(){
-    if (!$('pw').value) return msg('loadMsg','현재 비밀번호를 입력해 주세요');
+    if (!window.RosterLock) return msg('loadMsg','lock.js를 불러오지 못했어요. _lib 폴더에 lock.js가 있는지 확인해 주세요.');
+    try { localStorage.setItem('rosterEditorPath', $('path').value); } catch(e){}
+    var pw = $('pw').value;
     msg('loadMsg','불러오는 중…', true);
-    fetch($('path').value + '?t=' + Date.now(), { cache:'no-store' })
-      .then(function(r){ if(!r.ok) throw new Error('file'); return r.json(); })
-      .then(function(box){
-        var pw = $('pw').value;
-        return RosterLock.unlockWithPassword(box, pw, false).then(function(data){ loaded = { box:box, pw:pw }; return data; });
+    var url = $('path').value;
+    fetch(url + (url.indexOf('?')<0?'?':'&') + 't=' + Date.now(), { cache:'no-store' })
+      .then(function(r){
+        if (!r.ok){ var e = new Error('file'); e.status = r.status; throw e; }
+        return r.text();
+      })
+      .then(function(t){
+        var box;
+        try { box = JSON.parse(t); } catch(e){ throw new Error('json'); }
+        if (!box || !box.salt || !box.ct) throw new Error('json');
+        return RosterLock.openForEdit(box, pw).then(function(res){ loaded = { box:box, key:res.key }; return res.data; })
+          .catch(function(e){ if (!pw && e && e.message === 'nokey') throw new Error('needpw'); throw new Error('pw'); });
       })
       .then(function(data){
         $('text').value = toText(data);
         var n = data.groups.reduce(function(a,g){ return a + g.raw.length; }, 0);
-        msg('loadMsg', '불러왔어요 · ' + data.groups.length + '개 반, ' + n + '명', true);
+        msg('loadMsg', '불러왔어요 · ' + data.groups.length + '개 반, ' + n + '명' + (pw ? '' : ' (이 기기에 기억된 열쇠 사용)'), true);
       })
-      .catch(function(e){ msg('loadMsg', e && e.message === 'file' ? '파일을 찾지 못했어요. 위치를 확인해 주세요.' : '비밀번호가 맞지 않아요.'); });
+      .catch(function(e){
+        var m = e && e.message;
+        if (m === 'file') msg('loadMsg', '파일을 찾지 못했어요 (오류 ' + e.status + '). 폴더 이름과 위치를 확인해 주세요.');
+        else if (m === 'json') msg('loadMsg', '파일은 찾았지만 내용이 올바르지 않아요. 받은 _명단.enc.json을 Upload files로 그대로 다시 올려 주세요.');
+        else if (m === 'needpw') msg('loadMsg', '이 기기에 기억된 열쇠가 없어요. 현재 비밀번호를 입력해 주세요.');
+        else if (m === 'pw') msg('loadMsg', '비밀번호가 맞지 않아요. 한/영 상태를 확인하고, "비밀번호 보이기"로 입력한 글자를 확인해 보세요.');
+        else msg('loadMsg', '불러오지 못했어요: ' + (m || e));
+      });
   };
   $('blankBtn').onclick = function(){
     $('text').value = '# g01 | 사문탐 2-1반 | 1반\n1 1 홍길동\n1 2 김철수';
     msg('loadMsg', '빈 양식을 넣었어요. 2번에서 고쳐 주세요.', true);
   };
+  function download(box){
+    var blob = new Blob([JSON.stringify(box)], { type:'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = '_명단.enc.json';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
   $('saveBtn').onclick = function(){
     var r = fromText($('text').value);
     if (r.errors.length) return msg('saveMsg', r.errors.slice(0,3).join(' / '));
     var p2 = $('pw2').value, p3 = $('pw3').value;
-    if (p2.length < 4) return msg('saveMsg', '비밀번호는 4자 이상으로 해 주세요');
+    var n = r.data.groups.reduce(function(a,g){ return a + g.raw.length; }, 0);
+    var done = function(note){ return function(box){ download(box); msg('saveMsg', '내려받았어요 · ' + r.data.groups.length + '개 반, ' + n + '명 · ' + note, true); }; };
+    if (!p2 && !p3){
+      if (!loaded) return msg('saveMsg', '비밀번호를 그대로 쓰려면 먼저 1번에서 불러오기를 해 주세요. (빈 양식이라면 새 비밀번호를 정해 주세요)');
+      return RosterLock.reencrypt(r.data, loaded.key, loaded.box).then(done('비밀번호 그대로 — 칠판에서 다시 묻지 않아요'));
+    }
+    if (p2.length < 4) return msg('saveMsg', '새 비밀번호는 4자 이상으로 해 주세요');
     if (p2 !== p3) return msg('saveMsg', '새 비밀번호 두 칸이 서로 달라요');
-    var same = loaded && loaded.pw === p2;
-    RosterLock.encrypt(r.data, p2, same ? loaded.box.iter : undefined, same ? loaded.box.salt : undefined).then(function(box){
-      var blob = new Blob([JSON.stringify(box)], { type:'application/json' });
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download = '_명단.enc.json';
-      document.body.appendChild(a); a.click(); a.remove();
-      var n = r.data.groups.reduce(function(a,g){ return a + g.raw.length; }, 0);
-      msg('saveMsg', '내려받았어요 · ' + r.data.groups.length + '개 반, ' + n + '명'
-        + (same ? ' · 비밀번호가 같아서 칠판에서 다시 묻지 않아요' : ' · 새 비밀번호라 칠판마다 한 번씩 다시 입력해야 해요'), true);
-    });
+    RosterLock.encrypt(r.data, p2).then(done('새 비밀번호 — 칠판마다 한 번씩 다시 입력해야 해요'));
   };
 })();
 </script>

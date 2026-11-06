@@ -55,10 +55,14 @@
 
   <div class="card">
     <h2>3. 잠금 파일 만들기</h2>
-    <label for="pw2">새 비밀번호 <span style="font-weight:500">(비밀번호를 바꾸지 않으려면 두 칸 모두 비워 두세요 — 칠판에서 다시 묻지 않아요)</span></label>
-    <input id="pw2" type="password" autocomplete="new-password">
-    <label for="pw3">새 비밀번호 확인</label>
-    <input id="pw3" type="password" autocomplete="new-password">
+    <p class="help" style="margin-top:0">기본은 <b>비밀번호 그대로</b>입니다. 칠판에서도 다시 묻지 않아요.</p>
+    <label class="show"><input type="checkbox" id="changePw"> 비밀번호 바꾸기 (바꾸면 모든 칠판에서 새 비밀번호를 한 번씩 입력해야 해요)</label>
+    <div id="newPwBox" hidden>
+      <label for="pw2">새 비밀번호 (입력한 글자가 그대로 보입니다)</label>
+      <input id="pw2" type="text" autocomplete="off" spellcheck="false">
+      <label for="pw3">새 비밀번호 확인</label>
+      <input id="pw3" type="text" autocomplete="off" spellcheck="false">
+    </div>
     <button id="saveBtn" type="button">잠금 파일 내려받기</button>
     <div class="msg" id="saveMsg"></div>
     <p class="help">내려받은 <code>_명단.enc.json</code>을 GitHub의 <b>사회문제탐구</b> 폴더에 올리면(같은 이름 덮어쓰기) 1~2분 뒤 반영됩니다.
@@ -155,16 +159,22 @@
   $('saveBtn').onclick = function(){
     var r = fromText($('text').value);
     if (r.errors.length) return msg('saveMsg', r.errors.slice(0,3).join(' / '));
-    var p2 = $('pw2').value, p3 = $('pw3').value;
+    var changing = $('changePw').checked;
+    var p2 = RosterLock.cleanPw($('pw2').value), p3 = RosterLock.cleanPw($('pw3').value);
     var n = r.data.groups.reduce(function(a,g){ return a + g.raw.length; }, 0);
     var done = function(note){ return function(box){ download(box); msg('saveMsg', '내려받았어요 · ' + r.data.groups.length + '개 반, ' + n + '명 · ' + note, true); }; };
-    if (!p2 && !p3){
+    if (!changing){
       if (!loaded) return msg('saveMsg', '비밀번호를 그대로 쓰려면 먼저 1번에서 불러오기를 해 주세요. (빈 양식이라면 새 비밀번호를 정해 주세요)');
       return RosterLock.reencrypt(r.data, loaded.key, loaded.box).then(done('비밀번호 그대로 — 칠판에서 다시 묻지 않아요'));
     }
     if (p2.length < 4) return msg('saveMsg', '새 비밀번호는 4자 이상으로 해 주세요');
     if (p2 !== p3) return msg('saveMsg', '새 비밀번호 두 칸이 서로 달라요');
-    RosterLock.encrypt(r.data, p2).then(done('새 비밀번호 — 칠판마다 한 번씩 다시 입력해야 해요'));
+    if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(p2) && !confirm('새 비밀번호에 한글이 들어 있어요: "' + p2 + '"\n한/영 키 실수가 아니라면 확인을 누르세요.')) return;
+    RosterLock.encrypt(r.data, p2).then(done('새 비밀번호는 "' + p2 + '" 입니다. 꼭 적어 두세요. 칠판마다 한 번씩 다시 입력해야 해요'));
+  };
+  $('changePw').onchange = function(){
+    $('newPwBox').hidden = !this.checked;
+    if (!this.checked){ $('pw2').value = ''; $('pw3').value = ''; }
   };
 })();
 </script>

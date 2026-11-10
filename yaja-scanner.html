@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>야자 출석 스캐너</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --paper:#F6F1E4; --ink:#2B2620; --ochre:#B4762A;
+    --forest:#3E5C42; --forest-deep:#2A3F2D; --line:#D8CDB4;
+    --card:#FFFDF7; --danger:#A5432F; --warn:#B4762A;
+  }
+  *{box-sizing:border-box;}
+  html,body{ height:100%; }
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans KR', sans-serif; }
+  .wrap{ max-width:520px; margin:0 auto; padding:20px 16px 40px; min-height:100vh; }
+  h1,h2{ font-family:'Noto Serif KR', serif; margin:0; }
+
+  /* 로그인 게이트 */
+  #authGate{ min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .login-card{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:36px 30px; width:100%; max-width:340px; }
+  .login-card h2{ font-size:20px; margin-bottom:6px; }
+  .login-card p{ margin:0 0 22px; font-size:13px; color:#6b6455; }
+  .field{ margin-bottom:14px; }
+  .field input, .field select{ width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:6px; font-size:15px; font-family:inherit; }
+  .primary-btn{ width:100%; padding:12px; background:var(--forest); color:#fff; border:none; border-radius:6px; font-size:15px; font-weight:500; cursor:pointer; }
+  .primary-btn:disabled{ background:#B9B29B; }
+  .error-msg{ color:var(--danger); font-size:13px; margin-top:10px; }
+
+  /* 메인 화면 */
+  #appRoot{ display:none; }
+  .top-row{ display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--ink); padding-bottom:12px; margin-bottom:14px; }
+  .top-row h1{ font-size:19px; }
+  .top-row button{ background:none; border:1px solid var(--line); border-radius:6px; padding:6px 12px; font-size:12.5px; cursor:pointer; }
+  .room-row{ display:flex; align-items:center; gap:8px; margin-bottom:14px; font-size:13px; }
+  .room-row select{ padding:6px 10px; border:1px solid var(--line); border-radius:6px; font-family:inherit; }
+  .block-status{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin-bottom:14px; font-size:13.5px; }
+  .block-status b{ color:var(--forest-deep); }
+
+  #qrReaderWrap{ background:#000; border-radius:12px; overflow:hidden; position:relative; }
+  #qrReader{ width:100%; }
+  .cam-row{ display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:13px; }
+  .cam-row select{ flex:1; padding:6px 10px; border:1px solid var(--line); border-radius:6px; font-family:inherit; }
+  .cam-row button{ background:none; border:1px solid var(--line); border-radius:6px; padding:6px 10px; font-size:12.5px; cursor:pointer; white-space:nowrap; }
+
+  #feedback{
+    position:fixed; inset:0; z-index:50; display:none;
+    align-items:center; justify-content:center; flex-direction:column; gap:14px;
+    color:#fff; text-align:center; padding:20px;
+  }
+  #feedback.show{ display:flex; }
+  #feedback.good{ background:rgba(62,92,66,0.96); }
+  #feedback.bad{ background:rgba(165,67,47,0.96); }
+  #feedback.warn{ background:rgba(180,118,42,0.96); }
+  #feedback .icon{ font-size:64px; }
+  #feedback .name{ font-family:'Noto Serif KR', serif; font-size:30px; font-weight:700; }
+  #feedback .desc{ font-size:16px; opacity:0.95; }
+
+  .log-list{ margin-top:16px; }
+  .log-item{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:6px; font-size:13px; display:flex; justify-content:space-between; }
+  .log-item .t{ color:#8a8270; }
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div class="login-card">
+    <h2>야자 출석 스캐너</h2>
+    <p>스캐너 전용 계정으로 로그인해주세요.</p>
+    <div class="field"><input type="number" id="gateNum" placeholder="번호"></div>
+    <div class="field"><input type="password" id="gatePw" placeholder="비밀번호"></div>
+    <button class="primary-btn" id="gateLoginBtn">로그인</button>
+    <p class="error-msg" id="gateError" style="display:none;"></p>
+  </div>
+</div>
+
+<div id="appRoot">
+  <div class="wrap">
+    <div class="top-row">
+      <h1>야자 출석 스캐너</h1>
+      <button id="logoutBtn">로그아웃</button>
+    </div>
+
+    <div class="room-row">
+      <span>교실</span>
+      <select id="roomSelect">
+        <option value="1">1교실</option>
+        <option value="2">2교실</option>
+        <option value="3">3교실</option>
+        <option value="4">4교실</option>
+      </select>
+    </div>
+
+    <div class="block-status" id="blockStatus">확인 중...</div>
+
+    <div class="cam-row">
+      <select id="cameraSelect"></select>
+      <button id="switchCamBtn">카메라 전환</button>
+      <button id="testSoundBtn">🔊 소리 테스트</button>
+    </div>
+    <div id="qrReaderWrap"><div id="qrReader"></div></div>
+
+    <div class="log-list" id="logList"></div>
+  </div>
+</div>
+
+<div id="feedback">
+  <div class="icon" id="fbIcon"></div>
+  <div class="name" id="fbName"></div>
+  <div class="desc" id="fbDesc"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="yaja-common.js"></script>
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBars-AalN-eZKCjGIOgOqkQ9oCHyDSLqU",
+  authDomain: "grade-7class.firebaseapp.com",
+  projectId: "grade-7class",
+  storageBucket: "grade-7class.firebasestorage.app",
+  messagingSenderId: "304110691750",
+  appId: "1:304110691750:web:7b7ce68828f538802adb67"
+};
+const EMAIL_DOMAIN = "2hak7ban.app";
+// ⚠️ QR 발급기(yaja-qr-issuer.html)의 "비밀키"와 반드시 똑같아야 합니다.
+const SECRET_KEY = "yangil-yaja-2026";
+
+// 학급 어플(index.html)과 로그인이 섞이지 않도록 별도 앱으로 씀
+const fbApp = firebase.initializeApp(FIREBASE_CONFIG, "yajaScanner");
+const auth = fbApp.auth();
+const db = fbApp.firestore();
+function numToEmail(num){ return `s${num}@${EMAIL_DOMAIN}`; }
+
+let gateUser = null, gateProfile = null;
+// 우리 반 QR 앞자리 (학년 + 반 두 자리). 새 학년 전환 뒤에는 config/class 값으로 바뀜
+let CLASS_PREFIX = "207";
+async function loadClassPrefix(){
+  try{
+    const d = await db.collection("config").doc("class").get();
+    if(d.exists && d.data().grade && d.data().classNo) CLASS_PREFIX = `${d.data().grade}${String(d.data().classNo).padStart(2, "0")}`;
+  }catch(e){ console.warn("학년·반 설정을 읽지 못했어요 (기본값 사용)", e); }
+}
+let rosterMap = {}; // num(1~27) -> {uid, name}
+
+document.getElementById("gateLoginBtn").addEventListener("click", async () => {
+  try{
+    if(!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(sharedAudioCtx.state === "suspended") await sharedAudioCtx.resume();
+  }catch(e){}
+  const num = document.getElementById("gateNum").value.trim();
+  const pw = document.getElementById("gatePw").value;
+  const errEl = document.getElementById("gateError");
+  errEl.style.display = "none";
+  if(!num || !pw) return;
+  try{
+    await auth.signInWithEmailAndPassword(numToEmail(num), pw);
+  }catch(e){
+    errEl.textContent = "번호와 비밀번호를 확인해주세요.";
+    errEl.style.display = "block";
+  }
+});
+document.getElementById("logoutBtn").addEventListener("click", () => auth.signOut());
+
+auth.onAuthStateChanged(async (user) => {
+  gateUser = user;
+  if(!user){
+    document.getElementById("authGate").style.display = "flex";
+    document.getElementById("appRoot").style.display = "none";
+    return;
+  }
+  const doc = await db.collection("students").doc(user.uid).get();
+  gateProfile = doc.exists ? doc.data() : null;
+
+  if(!gateProfile || !["teacher","yajascanner"].includes(gateProfile.role)){
+    document.getElementById("gateError").textContent = "이 계정은 스캐너를 쓸 수 없어요.";
+    document.getElementById("gateError").style.display = "block";
+    await auth.signOut();
+    return;
+  }
+  await loadClassPrefix();
+
+  document.getElementById("authGate").style.display = "none";
+  document.getElementById("appRoot").style.display = "block";
+
+  await loadRoster();
+  await loadTodayOverride();
+  document.getElementById("testSoundBtn").addEventListener("click", () => playTone("good"));
+  updateBlockStatus();
+  setInterval(updateBlockStatus, 15000);
+  await startScanner();
+});
+
+async function loadRoster(){
+  const snap = await db.collection("students").where("role", "==", "student").get();
+  rosterMap = {};
+  snap.forEach(doc => {
+    const d = doc.data();
+    rosterMap[d.num] = { uid: doc.id, name: d.name, yajaEnroll: d.yajaEnroll || {} };
+  });
+}
+
+/* ---------- 블록 시간표 (yaja-common.js) ---------- */
+let todayOverride = null; // null=기본값, true=강제 운영, false=강제 미운영
+async function loadTodayOverride(){
+  try{
+    const doc = await db.collection("yajaCalendarOverrides").doc(yajaDateKey(new Date())).get();
+    todayOverride = doc.exists ? doc.data().operating : null;
+  }catch(e){ todayOverride = null; }
+}
+
+const CHECKIN_BEFORE = 10, CHECKIN_AFTER = 15; // 시작 -10분 ~ +15분
+const CHECKOUT_BEFORE = 10, CHECKOUT_AFTER = 15; // 종료 -10분 ~ +15분
+
+function currentPhase(){
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  const blocks = yajaEffectiveBlocks(now.getDay(), todayOverride);
+  for(const b of blocks){
+    const startMin = yajaToMinutes(b.start), endMin = yajaToMinutes(b.end);
+    if(nowMin >= startMin - CHECKIN_BEFORE && nowMin <= startMin + CHECKIN_AFTER){
+      return { block: b, phase: "checkin" };
+    }
+    if(nowMin >= endMin - CHECKOUT_BEFORE && nowMin <= endMin + CHECKOUT_AFTER){
+      return { block: b, phase: "checkout" };
+    }
+  }
+  return null;
+}
+
+// 같은 시각에 '앞 블록 퇴실'과 '뒤 블록 입실' 시간대가 겹칠 수 있음 (예: 19:50~20:15 야간1 퇴실 = 야간2 입실)
+function currentPhases(){
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  const out = [];
+  for(const b of yajaEffectiveBlocks(now.getDay(), todayOverride)){
+    const startMin = yajaToMinutes(b.start), endMin = yajaToMinutes(b.end);
+    if(nowMin >= startMin - CHECKIN_BEFORE && nowMin <= startMin + CHECKIN_AFTER) out.push({ block: b, phase: "checkin" });
+    if(nowMin >= endMin - CHECKOUT_BEFORE && nowMin <= endMin + CHECKOUT_AFTER) out.push({ block: b, phase: "checkout" });
+  }
+  return out;
+}
+
+function updateBlockStatus(){
+  const el = document.getElementById("blockStatus");
+  const p = currentPhase();
+  if(!p){
+    el.innerHTML = todayOverride === false
+      ? "오늘은 담임이 '미운영일'로 지정했어요."
+      : `오늘은 지금 인정되는 출석 시간대가 아니에요.`;
+    return;
+  }
+  el.innerHTML = currentPhases().map(x => `<b>${x.block.label}</b> ${x.phase === "checkin" ? "입실" : "퇴실"}`).join(" · ") + " 인정 시간대예요.";
+}
+
+/* ---------- 스캐너 ---------- */
+let html5Qr = null;
+let scanLocked = false;
+let cameraList = [];
+let currentCamIndex = 0;
+
+function squareQrbox(viewfinderWidth, viewfinderHeight){
+  const min = Math.min(viewfinderWidth, viewfinderHeight);
+  const size = Math.floor(min * 0.7);
+  return { width: size, height: size };
+}
+
+async function initCameraList(){
+  try{
+    cameraList = await Html5Qrcode.getCameras();
+  }catch(e){
+    document.getElementById("blockStatus").innerHTML = "카메라 목록을 가져오지 못했어요. 카메라 권한을 허용했는지 확인해주세요.";
+    return;
+  }
+  const sel = document.getElementById("cameraSelect");
+  sel.innerHTML = cameraList.map((c,i) => `<option value="${i}">${c.label || "카메라 " + (i+1)}</option>`).join("");
+
+  // 기본값: 라벨에 front/전면이 들어간 카메라를 우선 선택 (요청하신 전면카메라 우선)
+  const frontIdx = cameraList.findIndex(c => /front|전면|user/i.test(c.label));
+  currentCamIndex = frontIdx >= 0 ? frontIdx : 0;
+  sel.value = currentCamIndex;
+  applyMirror();
+
+  sel.addEventListener("change", () => {
+    currentCamIndex = Number(sel.value);
+    applyMirror();
+    restartScanner();
+  });
+  document.getElementById("switchCamBtn").addEventListener("click", () => {
+    currentCamIndex = (currentCamIndex + 1) % cameraList.length;
+    sel.value = currentCamIndex;
+    applyMirror();
+    restartScanner();
+  });
+}
+
+// 전면카메라는 화면에 보이는 방향이 실제와 반대라 헷갈리므로, 미리보기만 좌우 반전
+// (QR 인식 자체는 원본 프레임을 그대로 쓰기 때문에 인식률에는 영향 없음)
+function applyMirror(){
+  const isFront = /front|전면|user/i.test(cameraList[currentCamIndex]?.label || "");
+  document.getElementById("qrReaderWrap").style.transform = isFront ? "scaleX(-1)" : "none";
+}
+
+async function startScanner(){
+  await initCameraList();
+  if(cameraList.length === 0){
+    document.getElementById("blockStatus").innerHTML = "사용 가능한 카메라를 찾지 못했어요.";
+    return;
+  }
+  html5Qr = new Html5Qrcode("qrReader");
+  await runCamera();
+}
+
+async function runCamera(){
+  const camId = cameraList[currentCamIndex].id;
+  try{
+    await html5Qr.start(
+      camId,
+      { fps: 10, qrbox: squareQrbox },
+      onScanSuccess,
+      () => {} // 인식 실패 프레임은 무시
+    );
+  }catch(err){
+    document.getElementById("blockStatus").innerHTML = "카메라를 열 수 없어요: " + err;
+  }
+}
+
+async function restartScanner(){
+  if(!html5Qr) return;
+  try{
+    await html5Qr.stop();
+    html5Qr.clear();
+  }catch(e){ /* 이미 정지 상태일 수 있음 */ }
+  await runCamera();
+}
+
+async function onScanSuccess(decodedText){
+  if(scanLocked) return;
+  scanLocked = true;
+  await handleCode(decodedText);
+  setTimeout(() => { scanLocked = false; }, 1500);
+}
+
+async function sign(no, secret){
+  const enc = new TextEncoder().encode(no + "::" + secret);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,6);
+}
+
+let sharedAudioCtx = null;
+async function playTone(type){
+  try{
+    if(!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(sharedAudioCtx.state === "suspended") await sharedAudioCtx.resume();
+    const ctx = sharedAudioCtx;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+    if(type === "good"){
+      // 띠링~ (두 음이 올라가는 밝은 소리)
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.setValueAtTime(1318.5, now + 0.09);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+      osc.start(now); osc.stop(now + 0.3);
+    } else {
+      // 낮은 경고음
+      osc.type = "square";
+      osc.frequency.setValueAtTime(220, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      osc.start(now); osc.stop(now + 0.22);
+    }
+  }catch(e){ /* 오디오 미지원 환경 무시 */ }
+}
+
+function showFeedback(type, icon, name, desc){
+  const fb = document.getElementById("feedback");
+  fb.className = "show " + type;
+  document.getElementById("fbIcon").textContent = icon;
+  document.getElementById("fbName").textContent = name;
+  document.getElementById("fbDesc").textContent = desc;
+  playTone(type === "good" ? "good" : "bad");
+  if(navigator.vibrate) navigator.vibrate(type === "good" ? 80 : [80,60,80]);
+  setTimeout(() => { fb.className = ""; }, 1400);
+}
+
+function addLog(text){
+  const list = document.getElementById("logList");
+  const item = document.createElement("div");
+  item.className = "log-item";
+  const t = new Date().toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit"});
+  item.innerHTML = `<span>${text}</span><span class="t">${t}</span>`;
+  list.prepend(item);
+  while(list.children.length > 8) list.removeChild(list.lastChild);
+}
+
+async function handleCode(text){
+  const m = text.match(/^YJ\|(\d{5})\|([0-9a-f]{6})$/);
+  if(!m){
+    showFeedback("bad", "✕", "인식 오류", "올바른 야자 QR이 아니에요.");
+    return;
+  }
+  const [, code, sig] = m;
+  const real = await sign(code, SECRET_KEY);
+  if(sig !== real){
+    showFeedback("bad", "✕", "위조 의심", "비밀키가 일치하지 않는 QR이에요.");
+    return;
+  }
+  if(!code.startsWith(CLASS_PREFIX)){
+    showFeedback("bad", "✕", "다른 반 QR", "우리 반 QR이 아니에요.");
+    return;
+  }
+  const num = parseInt(code.slice(3), 10);
+  const student = rosterMap[num];
+  if(!student){
+    showFeedback("bad", "✕", "등록되지 않음", `${num}번을 명단에서 찾을 수 없어요.`);
+    return;
+  }
+
+  const phases = currentPhases();
+  if(!phases.length){
+    showFeedback("warn", "⏰", student.name, "지금은 출석 인정 시간이 아니에요.");
+    return;
+  }
+  const nowDow = new Date().getDay();
+  // 이 학생이 신청한 블록의 처리만 골라냄 (연속 블록이면 퇴실+입실을 한 번에)
+  const mine = phases.filter(x => yajaIsEnrolled(student.yajaEnroll, nowDow, x.block.key));
+  if(!mine.length){
+    showFeedback("bad", "✕", student.name, `오늘 ${phases.map(x => x.block.label).join("/")} 야자 신청자가 아니에요.`);
+    return;
+  }
+
+  const date = yajaDateKey(new Date());
+  const room = document.getElementById("roomSelect").value;
+  const done = [], info = [];
+  try{
+    // 퇴실 먼저, 그다음 입실
+    mine.sort((a,b) => (a.phase === "checkout" ? 0 : 1) - (b.phase === "checkout" ? 0 : 1));
+    for(const p of mine){
+      const ref = db.collection("yajaAttendance").doc(`${date}_${num}_${p.block.key}`);
+      const existing = await ref.get();
+      if(p.phase === "checkin"){
+        if(existing.exists && existing.data().checkInAt){ info.push(`${p.block.label} 입실은 이미 됨`); continue; }
+        await ref.set({
+          studentUid: student.uid, num, name: student.name,
+          date, block: p.block.key, blockLabel: p.block.label, room,
+          checkInAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }, {merge:true});
+        done.push(`${p.block.label} 입실`);
+      } else {
+        if(!existing.exists || !existing.data().checkInAt){ info.push(`${p.block.label} 입실 기록 없음`); continue; }
+        if(existing.data().checkOutAt){ info.push(`${p.block.label} 퇴실은 이미 됨`); continue; }
+        await ref.set({ checkOutAt: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true});
+        done.push(`${p.block.label} 퇴실`);
+      }
+    }
+  }catch(e){
+    console.error(e);
+    showFeedback("bad", "✕", student.name, "저장 중 오류가 발생했어요.");
+    return;
+  }
+  if(done.length){
+    showFeedback("good", "✓", student.name, done.join(" + ") + " 완료");
+    addLog(`${num}번 ${student.name} · ${done.join(" + ")}`);
+  } else {
+    showFeedback("warn", "ℹ️", student.name, info.join(" · "));
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>결석 신고서 - 학부모 서명</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --paper:#F6F1E4; --ink:#2B2620; --ochre:#B4762A;
+    --forest:#3E5C42; --forest-deep:#2A3F2D; --line:#D8CDB4;
+    --card:#FFFDF7; --danger:#A5432F;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans KR', sans-serif; min-height:100vh; }
+  .wrap{ max-width:600px; margin:0 auto; padding:24px 16px 60px; }
+  h1,h2,h3{ font-family:'Noto Serif KR', serif; margin:0; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:16px; }
+  h1{ font-size:19px; margin-bottom:6px; }
+  p.sub{ color:#6b6455; font-size:13px; margin:0 0 16px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--forest-deep); }
+  .field input, .field textarea{ width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:6px; font-size:14px; font-family:'Noto Sans KR', sans-serif; background:#fff; }
+  canvas#sigCanvas{ width:100%; height:150px; border:1.5px dashed var(--line); border-radius:6px; background:#fff; touch-action:none; }
+  .primary-btn{ width:100%; padding:13px; background:var(--forest); color:#fff; border:none; border-radius:6px; font-size:15px; font-weight:500; cursor:pointer; margin-top:6px; }
+  .primary-btn:disabled{ background:#B9B29B; cursor:not-allowed; }
+  .ghost-btn{ background:none; border:1px solid var(--line); border-radius:6px; padding:8px 12px; font-size:13px; cursor:pointer; color:var(--ink); }
+  .msg{ text-align:center; padding:60px 20px; color:#6b6455; font-size:14.5px; }
+  .msg.err{ color:var(--danger); }
+
+  /* ---- 원본 양식 오버레이 ---- */
+  .page-outer{ width:100%; overflow:hidden; margin-bottom:16px; border:1px solid var(--line); border-radius:6px; }
+  .page-inner{
+    width:992px; height:1403px; position:relative; transform-origin:top left;
+    background-repeat:no-repeat; background-size:992px 1403px;
+  }
+  .ov-check{ position:absolute; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700; color:#c0392b; line-height:1; }
+  .ov{ position:absolute; font-family:'Noto Sans KR', sans-serif; color:#111; white-space:nowrap; }
+  .ov-text{ font-size:22px; }
+  .ov-circle{ position:absolute; border:3px solid #c0392b; border-radius:50%; }
+  .ov-sig{ position:absolute; object-fit:contain; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="loadingMsg" class="msg">불러오는 중...</div>
+
+  <div id="formArea" style="display:none;">
+    <div class="card">
+      <h1>결석 신고서 확인</h1>
+      <p class="sub">아래는 실제 제출되는 양식 모양이에요. 내용을 확인하시고 서명해주세요.</p>
+    </div>
+
+    <div class="page-outer" id="page1Outer">
+      <div class="page-inner" id="page1" style="background-image:url('assets/abs-form-1.jpg');">
+        <div class="ov" id="p1GradeFix" style="display:none; left:174px; top:197px; width:22px; height:32px; background:#fff; font-size:19px; line-height:32px; text-align:center;"></div>
+        <div class="ov" id="p1BanFix" style="display:none; left:320px; top:197px; width:24px; height:32px; background:#fff; font-size:19px; line-height:32px; text-align:center;"></div>
+        <div class="ov ov-text" id="p1Num" style="left:400px; top:203px;"></div>
+        <div class="ov ov-text" id="p1Name" style="left:300px; top:250px;"></div>
+        <div class="ov-circle" id="p1TypeCircle"></div>
+        <div class="ov ov-text" id="p1StartMonth" style="left:334px; top:408px; width:60px; line-height:22px; text-align:center;"></div>
+        <div class="ov ov-text" id="p1StartDay" style="left:421px; top:408px; width:60px; line-height:22px; text-align:center;"></div>
+        <div class="ov ov-text" id="p1EndMonth" style="left:568px; top:408px; width:60px; line-height:22px; text-align:center;"></div>
+        <div class="ov ov-text" id="p1EndDay" style="left:657px; top:408px; width:60px; line-height:22px; text-align:center;"></div>
+        <div class="ov ov-text" id="p1TotalDays" style="left:751px; top:408px; width:60px; line-height:22px; text-align:center;"></div>
+        <div class="ov ov-check" id="p1Cb_진료확인서" style="left:265px; top:456px; display:none;">✓</div>
+        <div class="ov ov-check" id="p1Cb_진료비영수증" style="left:423px; top:456px; display:none;">✓</div>
+        <div class="ov ov-check" id="p1Cb_처방전" style="left:600px; top:456px; display:none;">✓</div>
+        <div class="ov ov-check" id="p1Cb_의사소견서" style="left:726px; top:456px; display:none;">✓</div>
+        <div class="ov ov-check" id="p1Cb_진단서" style="left:265px; top:496px; display:none;">✓</div>
+        <div class="ov ov-check" id="p1Cb_학부모의견서" style="left:423px; top:496px; display:none;">✓</div>
+        <div class="ov ov-check" id="p1Cb_담임교사확인서" style="left:601px; top:496px; display:none;">✓</div>
+        <div class="ov ov-check" id="p1Cb_내부결재문서" style="left:265px; top:536px; display:none;">✓</div>
+        <div class="ov ov-check" id="p1Cb_사망확인서" style="left:423px; top:536px; display:none;">✓</div>
+        <div class="ov ov-check" id="p1Cb_기타" style="left:600px; top:536px; display:none;">✓</div>
+        <div class="ov ov-text" id="p1EtcText" style="left:700px; top:552px; font-size:18px;"></div>
+        <div class="ov ov-text" id="p1Reason" style="left:260px; top:596px; font-size:19px; white-space:normal; width:680px;"></div>
+        <div class="ov ov-text" id="p1SubmitMonth" style="left:454px; top:662px; width:60px; line-height:22px; text-align:center;"></div>
+        <div class="ov ov-text" id="p1SubmitDay" style="left:531px; top:662px; width:60px; line-height:22px; text-align:center;"></div>
+        <div class="ov ov-text" id="p1ParentName" style="left:700px; top:760px; font-size:20px;"></div>
+        <img class="ov-sig" id="p1Sig" style="left:790px; top:748px; width:110px; height:48px;">
+      </div>
+    </div>
+
+    <div class="page-outer" id="page2Outer" style="display:none;">
+      <div class="page-inner" id="page2" style="background-image:url('assets/abs-form-2.jpg');">
+        <div class="ov ov-text" id="p2Grade" style="left:420px; top:225px;">2</div>
+        <div class="ov ov-text" id="p2Ban" style="left:530px; top:225px;">7</div>
+        <div class="ov ov-text" id="p2Num" style="left:600px; top:225px;"></div>
+        <div class="ov ov-text" id="p2Name" style="left:700px; top:288px;"></div>
+        <div class="ov-circle" id="p2TypeCircle" style="left:530px; top:363px; width:60px; height:30px;"></div>
+        <div class="ov ov-text" id="p2StartYear" style="left:341px; top:450px; width:60px; text-align:center;"></div>
+        <div class="ov ov-text" id="p2StartMonth" style="left:412px; top:450px; width:60px; text-align:center;"></div>
+        <div class="ov ov-text" id="p2StartDay" style="left:492px; top:450px; width:60px; text-align:center;"></div>
+        <div class="ov ov-text" id="p2EndMonth" style="left:622px; top:450px; width:60px; text-align:center;"></div>
+        <div class="ov ov-text" id="p2EndDay" style="left:703px; top:450px; width:60px; text-align:center;"></div>
+        <div class="ov ov-text" id="p2TotalDays" style="left:790px; top:450px; width:60px; text-align:center;"></div>
+        <div class="ov ov-text" id="p2Reason" style="left:345px; top:490px; font-size:17px; white-space:normal; width:540px;"></div>
+        <div class="ov ov-text" id="p2SubmitMonth" style="left:544px; top:928px; width:60px; text-align:center;"></div>
+        <div class="ov ov-text" id="p2SubmitDay" style="left:598px; top:928px; width:60px; text-align:center;"></div>
+        <div class="ov ov-text" id="p2ParentName" style="left:510px; top:995px; font-size:20px;"></div>
+        <div class="ov ov-text" id="p2Relation" style="left:590px; top:1038px;"></div>
+        <img class="ov-sig" id="p2Sig" style="left:600px; top:983px; width:80px; height:38px;">
+      </div>
+    </div>
+
+    <div class="card" id="parentOpinionCard" style="display:none;">
+      <h3 style="font-size:15px; margin-bottom:10px;">학부모 의견서 내용</h3>
+      <p class="sub">학부모 의견서는 상습적이지 않은 2일 이내 결석에만 사용할 수 있어요. 사유를 구체적으로 적어주세요.</p>
+      <div class="field"><label>학부모 의견 (구체적 사유)</label><textarea id="parentOpinion" rows="3" placeholder="구체적인 사유"></textarea></div>
+      <div class="field" style="margin-bottom:0;"><label>학생과의 관계</label><input type="text" id="parentRelation" placeholder="예: 모, 부"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:15px; margin-bottom:10px;">보호자 정보 및 서명</h3>
+      <div class="field"><label>보호자 성명</label><input type="text" id="parentNameInput" placeholder="예: 홍길동"></div>
+      <canvas id="sigCanvas"></canvas>
+      <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+        <button class="ghost-btn" onclick="clearSignature()">다시 서명</button>
+      </div>
+    </div>
+
+    <button class="primary-btn" id="submitBtn" onclick="handleParentSubmit()">제출하기</button>
+    <p id="submitError" style="display:none; color:var(--danger); font-size:13px; margin-top:8px; text-align:center;"></p>
+  </div>
+
+  <div id="doneMsg" class="msg" style="display:none;">
+    ✅ 제출이 완료되었어요.<br>담임 선생님께 전달되었습니다.
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBars-AalN-eZKCjGIOgOqkQ9oCHyDSLqU",
+  authDomain: "grade-7class.firebaseapp.com",
+  projectId: "grade-7class",
+  storageBucket: "grade-7class.firebasestorage.app",
+  messagingSenderId: "304110691750",
+  appId: "1:304110691750:web:7b7ce68828f538802adb67"
+};
+// 학급 어플(index.html)과 같은 주소라서, 기본 앱을 쓰면 학생 로그인이 풀려요 → 별도 앱 + 저장 안 함
+const fbApp = firebase.initializeApp(FIREBASE_CONFIG, "parentSign");
+const auth = fbApp.auth();
+const authReady = auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(()=>{});
+const db = fbApp.firestore();
+const storage = fbApp.storage();
+
+const params = new URLSearchParams(location.search);
+const absenceId = params.get("id");
+let absenceData = null;
+
+// 결석유형 단어별 원(circle) 좌표 (원본 이미지 픽셀 기준)
+const TYPE_CIRCLE_POS = {
+  "인정":   {left:340, top:303, width:46, height:34},
+  "질병":   {left:394, top:303, width:48, height:34},
+  "기타":   {left:450, top:303, width:48, height:34},
+  "미인정": {left:505, top:303, width:63, height:34}
+};
+
+function showMsg(text, isErr){
+  document.getElementById("loadingMsg").textContent = text;
+  document.getElementById("loadingMsg").className = "msg" + (isErr ? " err" : "");
+  document.getElementById("loadingMsg").style.display = "block";
+  document.getElementById("formArea").style.display = "none";
+}
+
+async function init(){
+  if(!absenceId){ showMsg("잘못된 링크예요.", true); return; }
+  try{
+    await authReady;
+    await auth.signInAnonymously();
+    const doc = await db.collection("absences").doc(absenceId).get();
+    if(!doc.exists){ showMsg("결석계를 찾을 수 없어요.", true); return; }
+    absenceData = doc.data();
+    // 학년·반 (새 학년 전환 뒤에는 config/class 값으로 표시)
+    try{
+      const c = await db.collection("config").doc("class").get();
+      const cfg = c.exists ? c.data() : null;
+      if(cfg && cfg.grade && cfg.classNo){
+        document.getElementById("p2Grade").textContent = cfg.grade;
+        document.getElementById("p2Ban").textContent = cfg.classNo;
+        if(Number(cfg.grade) !== 2){ const g = document.getElementById("p1GradeFix"); g.textContent = cfg.grade; g.style.display = "block"; }
+        if(Number(cfg.classNo) !== 7){ const b = document.getElementById("p1BanFix"); b.textContent = cfg.classNo; b.style.display = "block"; }
+      }
+    }catch(e){ console.warn("학년·반 설정을 읽지 못했어요 (기본값 사용)", e); }
+    if(absenceData.status === "submitted"){
+      document.getElementById("loadingMsg").style.display = "none";
+      document.getElementById("doneMsg").style.display = "block";
+      document.getElementById("doneMsg").textContent = "✅ 이미 제출이 완료된 결석계예요.";
+      return;
+    }
+    renderForm();
+  }catch(e){
+    console.error(e);
+    showMsg("불러오는 중 오류가 발생했어요.", true);
+  }
+}
+
+function dayCount(startStr, endStr){
+  const s = new Date(startStr), e = new Date(endStr);
+  return Math.round((e - s) / 86400000) + 1;
+}
+function mmdd(dateStr){
+  const d = new Date(dateStr);
+  return {m: d.getMonth() + 1, d: d.getDate()};
+}
+
+function renderForm(){
+  document.getElementById("loadingMsg").style.display = "none";
+  document.getElementById("formArea").style.display = "block";
+
+  const a = absenceData;
+  const start = mmdd(a.startDate), end = mmdd(a.endDate);
+  const total = dayCount(a.startDate, a.endDate);
+  const today = new Date();
+
+  // ---- Page 1 채우기 ----
+  document.getElementById("p1Num").textContent = a.num;
+  document.getElementById("p1Name").textContent = a.name;
+  document.getElementById("p1StartMonth").textContent = start.m;
+  document.getElementById("p1StartDay").textContent = start.d;
+  document.getElementById("p1EndMonth").textContent = end.m;
+  document.getElementById("p1EndDay").textContent = end.d;
+  document.getElementById("p1TotalDays").textContent = total;
+  document.getElementById("p1Reason").textContent = a.reason + (a.evidencePhysical ? " (실물 서류 별도 제출 예정)" : "");
+  document.getElementById("p1SubmitMonth").textContent = today.getMonth() + 1;
+  document.getElementById("p1SubmitDay").textContent = today.getDate();
+
+  const tp = TYPE_CIRCLE_POS[a.type];
+  if(tp){
+    const c = document.getElementById("p1TypeCircle");
+    c.style.left = tp.left + "px"; c.style.top = tp.top + "px";
+    c.style.width = tp.width + "px"; c.style.height = tp.height + "px";
+  }
+
+  (a.evidenceTypes || []).forEach(ev => {
+    const el = document.getElementById("p1Cb_" + ev);
+    if(el) el.style.display = "block";
+  });
+  if((a.evidenceTypes || []).includes("기타") && a.evidenceOtherText){
+    document.getElementById("p1EtcText").textContent = a.evidenceOtherText;
+  }
+
+  // ---- 학부모의견서(Page 2) 필요 여부 ----
+  const needsOpinion = (a.evidenceTypes || []).includes("학부모의견서");
+  if(needsOpinion){
+    document.getElementById("page2Outer").style.display = "block";
+    document.getElementById("parentOpinionCard").style.display = "block";
+    document.getElementById("p2Num").textContent = a.num;
+    document.getElementById("p2Name").textContent = a.name;
+    document.getElementById("p2StartYear").textContent = new Date(a.startDate).getFullYear();
+    document.getElementById("p2StartMonth").textContent = start.m;
+    document.getElementById("p2StartDay").textContent = start.d;
+    document.getElementById("p2EndMonth").textContent = end.m;
+    document.getElementById("p2EndDay").textContent = end.d;
+    document.getElementById("p2TotalDays").textContent = total;
+    document.getElementById("p2SubmitMonth").textContent = today.getMonth() + 1;
+    document.getElementById("p2SubmitDay").textContent = today.getDate();
+  }
+
+  scaleAllPages();
+  window.addEventListener("resize", scaleAllPages);
+  initSignaturePad();
+}
+
+function scalePageEl(outerId, innerId){
+  const outer = document.getElementById(outerId);
+  const inner = document.getElementById(innerId);
+  const scale = outer.clientWidth / 992;
+  inner.style.transform = `scale(${scale})`;
+  outer.style.height = (1403 * scale) + "px";
+}
+function scaleAllPages(){
+  scalePageEl("page1Outer", "page1");
+  if(document.getElementById("page2Outer").style.display !== "none"){
+    scalePageEl("page2Outer", "page2");
+  }
+}
+
+// ---------- 서명 캔버스 ----------
+let sigCtx, drawing = false, hasSignature = false;
+function initSignaturePad(){
+  const canvas = document.getElementById("sigCanvas");
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * ratio;
+  canvas.height = canvas.clientHeight * ratio;
+  sigCtx = canvas.getContext("2d");
+  sigCtx.scale(ratio, ratio);
+  sigCtx.lineWidth = 2.4;
+  sigCtx.lineCap = "round";
+  sigCtx.strokeStyle = "#2B2620";
+
+  const pos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return {x: t.clientX - rect.left, y: t.clientY - rect.top};
+  };
+  const start = (e) => { drawing = true; hasSignature = true; const p = pos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); e.preventDefault(); };
+  const move = (e) => { if(!drawing) return; const p = pos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); e.preventDefault(); };
+  const end = () => { drawing = false; };
+
+  canvas.addEventListener("mousedown", start);
+  canvas.addEventListener("mousemove", move);
+  window.addEventListener("mouseup", end);
+  canvas.addEventListener("touchstart", start);
+  canvas.addEventListener("touchmove", move);
+  canvas.addEventListener("touchend", end);
+}
+function clearSignature(){
+  const canvas = document.getElementById("sigCanvas");
+  sigCtx.clearRect(0, 0, canvas.width, canvas.height);
+  hasSignature = false;
+}
+
+// ---------- 제출 ----------
+async function handleParentSubmit(){
+  const errEl = document.getElementById("submitError");
+  errEl.style.display = "none";
+
+  const needsOpinion = (absenceData.evidenceTypes || []).includes("학부모의견서");
+  const parentOpinion = document.getElementById("parentOpinion").value.trim();
+  const parentRelation = document.getElementById("parentRelation").value.trim();
+  const parentName = document.getElementById("parentNameInput").value.trim();
+
+  if(!parentName){
+    errEl.textContent = "보호자 성명을 입력해주세요.";
+    errEl.style.display = "block";
+    return;
+  }
+  if(!hasSignature){
+    errEl.textContent = "서명을 해주세요.";
+    errEl.style.display = "block";
+    return;
+  }
+  if(needsOpinion && (!parentOpinion || !parentRelation)){
+    errEl.textContent = "학부모 의견과 학생과의 관계를 입력해주세요.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "제출 중...";
+
+  try{
+    // 서명 이미지를 양식 위 서명란에 배치
+    const sigDataUrl = document.getElementById("sigCanvas").toDataURL("image/png");
+    document.getElementById("p1Sig").src = sigDataUrl;
+    document.getElementById("p1ParentName").textContent = parentName;
+    if(needsOpinion){
+      document.getElementById("p2Reason").textContent = parentOpinion;
+      document.getElementById("p2ParentName").textContent = parentName;
+      document.getElementById("p2Relation").textContent = parentRelation;
+      document.getElementById("p2Sig").src = sigDataUrl;
+    }
+
+    // 캡처를 위해 원본 크기(스케일 1)로 잠깐 되돌림
+    document.getElementById("page1").style.transform = "scale(1)";
+    if(needsOpinion) document.getElementById("page2").style.transform = "scale(1)";
+    await new Promise(r => setTimeout(r, 150)); // 이미지 로드 대기
+
+    const canvas1 = await html2canvas(document.getElementById("page1"), {backgroundColor:"#ffffff", scale:2, useCORS:true});
+    const imageUrls = [];
+
+    const ref1 = storage.ref().child(`absences/${absenceId}_page1.png`);
+    await ref1.putString(canvas1.toDataURL("image/png").split(",")[1], "base64", {contentType:"image/png"});
+    imageUrls.push(await ref1.getDownloadURL());
+
+    if(needsOpinion){
+      const canvas2 = await html2canvas(document.getElementById("page2"), {backgroundColor:"#ffffff", scale:2, useCORS:true});
+      const ref2 = storage.ref().child(`absences/${absenceId}_page2.png`);
+      await ref2.putString(canvas2.toDataURL("image/png").split(",")[1], "base64", {contentType:"image/png"});
+      imageUrls.push(await ref2.getDownloadURL());
+    }
+
+    scaleAllPages(); // 화면 표시는 다시 축소 상태로
+
+    await db.collection("absences").doc(absenceId).update({
+      status: "submitted",
+      parentName,
+      parentOpinion: needsOpinion ? parentOpinion : "",
+      relation: needsOpinion ? parentRelation : "",
+      imageUrls,
+      signedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    document.getElementById("formArea").style.display = "none";
+    document.getElementById("doneMsg").style.display = "block";
+  }catch(e){
+    console.error(e);
+    errEl.textContent = "제출 중 오류가 발생했어요.";
+    errEl.style.display = "block";
+    btn.disabled = false;
+    btn.textContent = "제출하기";
+    scaleAllPages();
+  }
+}
+
+init();
+</script>
+</body>
+</html>

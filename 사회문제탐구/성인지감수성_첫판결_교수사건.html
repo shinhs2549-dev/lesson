@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>성인지 감수성 첫 판결</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;700;900&display=swap">
+<style>
+/* Layout: 판결문을 읽어 내려가는 단일 칼럼. 원심(교수 측 손) ↔ 대법원 판단을 좌우로 맞세운다 */
+:root{
+  --bg:#f3f5f7; --paper:#ffffff; --ink:#18202c; --muted:#5b6677; --line:#d9dee6;
+  --lower:#a35a1f; --lower-bg:#fbf1e8;      /* 원심·교수 측 */
+  --supreme:#24548a; --supreme-bg:#eaf1f9;  /* 대법원 */
+  --mark:#7a2f4b;
+  --f-display:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --paper:#1a2029; --ink:#e7ebf1; --muted:#9aa5b5; --line:#2c3440;
+  --lower:#e39a5c; --lower-bg:#2a2018; --supreme:#7fb0e6; --supreme-bg:#17243a; --mark:#d98aa8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --paper:#1a2029; --ink:#e7ebf1; --muted:#9aa5b5; --line:#2c3440;
+  --lower:#e39a5c; --lower-bg:#2a2018; --supreme:#7fb0e6; --supreme-bg:#17243a; --mark:#d98aa8; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.7;word-break:keep-all}
+.wrap{max-width:900px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:56px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.3;margin:0}
+h1{font-size:clamp(28px,5vw,42px);font-weight:900}
+h2{font-size:clamp(22px,3.4vw,28px);font-weight:700;display:flex;gap:12px;align-items:baseline}
+h2 .no{font-family:var(--f-body);font-size:14px;font-weight:600;color:var(--muted);letter-spacing:.08em}
+h3{font-size:19px;font-weight:700}
+p{margin:0}
+.sec{display:grid;gap:20px}
+.lead{color:var(--muted);max-width:62ch}
+.caseno{font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+
+/* 머리 */
+header{display:grid;gap:14px;border-bottom:3px double var(--line);padding-bottom:28px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.12em;color:var(--muted)}
+.stamp{display:inline-flex;flex-wrap:wrap;gap:8px 16px;font-size:15px;color:var(--muted)}
+.stamp b{color:var(--ink)}
+
+/* 행정 vs 형사 */
+.key{background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--mark);border-radius:6px;padding:22px 24px;display:grid;gap:16px}
+.key p strong{color:var(--mark)}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:15.5px}
+th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+thead th{font-size:13.5px;letter-spacing:.04em;color:var(--muted);font-weight:600}
+td:first-child{font-weight:600;white-space:nowrap}
+.hl{background:color-mix(in srgb,var(--mark) 10%,transparent)}
+
+/* 당사자 */
+.parties{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.party{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:grid;gap:4px;min-width:0}
+.party .role{font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+.party .who{font-weight:700;font-size:17px}
+.party .note{font-size:14.5px;color:var(--muted)}
+.acts{background:var(--paper);border:1px solid var(--line);border-radius:6px}
+.acts td:first-child{width:72px;text-align:center}
+
+/* 재판 과정 */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:0;position:relative}
+.step{display:grid;grid-template-columns:118px 28px 1fr;gap:0 14px;align-items:start}
+.step .date{font-variant-numeric:tabular-nums;font-size:14.5px;color:var(--muted);padding-top:3px;text-align:right}
+.step .dot{position:relative;height:100%;display:flex;justify-content:center}
+.step .dot::before{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--line)}
+.step:first-child .dot::before{top:10px}
+.step:last-child .dot::before{bottom:auto;height:10px}
+.step .dot i{position:relative;width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--muted);margin-top:6px}
+.step.win-l .dot i{border-color:var(--lower);background:var(--lower)}
+.step.win-s .dot i{border-color:var(--supreme);background:var(--supreme);width:18px;height:18px;margin-top:4px}
+.step .body{padding-bottom:22px;display:grid;gap:4px;min-width:0}
+.step .what{font-weight:700}
+.tag{display:inline-block;font-size:12.5px;font-weight:600;padding:1px 9px;border-radius:999px;margin-left:6px;vertical-align:2px;white-space:nowrap}
+.tag.l{color:var(--lower);background:var(--lower-bg)}
+.tag.s{color:var(--supreme);background:var(--supreme-bg)}
+.tag.n{color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent)}
+.step .desc{font-size:15.5px;color:var(--muted)}
+@media (max-width:560px){.step{grid-template-columns:22px 1fr}.step .date{grid-column:2;text-align:left;padding:0}.step .dot{grid-row:1/span 2;grid-column:1}.step .body{grid-column:2}}
+
+/* 쟁점 */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:12px 16px}
+.toolbar span{font-size:15px;color:var(--muted)}
+button{font:inherit;font-size:15px;font-weight:600;border:1.5px solid var(--supreme);color:var(--supreme);background:transparent;border-radius:6px;padding:7px 14px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--supreme);color:var(--paper)}
+button:focus-visible{outline:3px solid color-mix(in srgb,var(--supreme) 45%,transparent);outline-offset:2px}
+.issue{display:grid;gap:14px}
+.issue-q{display:flex;gap:12px;align-items:baseline}
+.issue-q .n{font-family:var(--f-display);font-weight:900;font-size:22px;color:var(--mark)}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13.5px;font-weight:600;letter-spacing:.04em}
+.legend .l{color:var(--lower)} .legend .s{color:var(--supreme)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.side{border-radius:6px;padding:14px 16px;font-size:15.5px;min-width:0}
+.side.l{background:var(--lower-bg);border:1px solid color-mix(in srgb,var(--lower) 30%,transparent)}
+.side.s{background:var(--supreme-bg);border:1px solid color-mix(in srgb,var(--supreme) 30%,transparent);position:relative}
+.side .who{display:none;font-size:12.5px;font-weight:700;margin-bottom:4px}
+.side.l .who{color:var(--lower)} .side.s .who{color:var(--supreme)}
+.cover{display:none}
+.hide-s .side.s .txt{visibility:hidden}
+.hide-s .side.s .cover{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;color:var(--supreme);font-weight:600;font-size:15px}
+.verdict{font-size:15.5px;border-top:1px dashed var(--line);padding-top:12px}
+.verdict b{color:var(--mark)}
+@media (max-width:640px){.pair,.legend{grid-template-columns:1fr}.legend{display:none}.side .who{display:block}}
+
+/* 판시 */
+blockquote{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:24px 26px;font-family:var(--f-display);font-size:clamp(18px,2.4vw,21px);font-weight:600;line-height:1.75}
+blockquote mark{background:color-mix(in srgb,var(--mark) 16%,transparent);color:inherit;padding:0 3px;border-radius:3px}
+blockquote cite{display:block;margin-top:10px;font-family:var(--f-body);font-style:normal;font-size:14px;font-weight:500;color:var(--muted)}
+.chain{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;counter-reset:c}
+.chain div{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px;font-size:15.5px;display:grid;gap:6px;align-content:start;min-width:0}
+.chain b{font-size:16px}
+@media (max-width:640px){.chain{grid-template-columns:1fr}}
+.oneline{font-weight:600;border-left:4px solid var(--mark);padding:4px 0 4px 14px}
+
+/* 이후 */
+.later{background:var(--paper);border:1px solid var(--line);border-radius:6px}
+.debate{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.debate div{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px 18px;min-width:0}
+.debate h3{font-size:17px;margin-bottom:8px}
+.debate ul{margin:0;padding-left:18px;font-size:15.5px;display:grid;gap:6px}
+@media (max-width:640px){.debate{grid-template-columns:1fr}}
+
+ol.q{margin:0;padding-left:22px;display:grid;gap:10px}
+.src{font-size:14px;color:var(--muted);display:grid;gap:4px}
+.src a{color:var(--supreme)}
+.note{font-size:14.5px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){button{transition:background .15s,color .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="top">
+
+<header>
+  <div class="eyebrow">사회문제 탐구 · 판결 읽기</div>
+  <h1>성인지 감수성은 어디서 처음 나왔을까</h1>
+  <p class="lead">대학교수 성희롱 해임 사건, <span class="caseno">대법원 2018. 4. 12. 선고 2017두74702 판결</span>을 판결문 원문으로 따라가 봅니다.</p>
+  <div class="stamp"><span>사건 <b>교원소청심사위원회결정취소</b></span><span>결과 <b>파기환송</b></span><span>재판부 <b>대법원 제2부, 대법관 4명 전원 일치</b></span></div>
+</header>
+
+<section class="sec">
+  <div class="key">
+    <p><strong>먼저 짚고 갈 점: 이 재판은 형사재판이 아닙니다.</strong> 교수를 처벌할지가 아니라, 학교가 교수를 <strong>해임한 것이 정당한지</strong>를 다툰 행정소송입니다. 성인지 감수성이 형사 성범죄 재판에 쓰이기 시작한 것은 같은 해 10월 판결부터입니다.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th></th><th>이 사건 (행정소송)</th><th>형사재판</th></tr></thead>
+        <tbody>
+          <tr><td>무엇을 다투나</td><td class="hl">해임(징계)이 정당한가</td><td>죄를 지었는가, 처벌할 것인가</td></tr>
+          <tr><td>누가 맞서나</td><td>교수 ↔ 교원소청심사위원회(+학교법인)</td><td>검사 ↔ 피고인</td></tr>
+          <tr><td>사건번호 기호</td><td><span class="caseno">2017<b>두</b>74702</span> (두 = 행정 상고)</td><td><span class="caseno">2018<b>도</b>7709</span> (도 = 형사 상고)</td></tr>
+          <tr><td>증명의 정도</td><td class="hl">사실이라고 볼 <b>고도의 개연성</b>이면 충분</td><td><b>합리적 의심이 없을 정도</b>로 증명해야 유죄</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">대법원도 이 판결에서 "형사재판에서 무죄가 나왔다는 사정만으로 행정소송에서 징계사유를 부정할 것은 아니다"라는 취지로 둘을 구분했습니다.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span class="no">1</span>사건 개요</h2>
+  <div class="parties">
+    <div class="party"><span class="role">원고</span><span class="who">대학교수</span><span class="note">해임이 부당하다고 소송을 낸 쪽</span></div>
+    <div class="party"><span class="role">피고</span><span class="who">교원소청심사위원회</span><span class="note">교수의 이의 제기를 기각한 기관</span></div>
+    <div class="party"><span class="role">피고보조참가인 · 상고인</span><span class="who">학교법인</span><span class="note">교수를 해임한 쪽, 대법원에 상고함</span></div>
+  </div>
+  <p>교수는 소속 학과 여학생 2명(아래 A, B)에게 여러 차례 성희롱·성추행을 했다는 이유로 해임되었습니다. 징계사유가 된 행위는 다음과 같습니다.</p>
+  <div class="tbl-wrap acts">
+    <table>
+      <thead><tr><th>피해자</th><th>교수의 행위</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>봉사활동 추천서를 받으러 오자 "뽀뽀해 주면 추천서를 만들어 주겠다"고 함</td></tr>
+        <tr><td>A</td><td>수업 중 질문하면 뒤에서 안는 듯한 자세로 지도함</td></tr>
+        <tr><td>A</td><td>연구실에 찾아가면 "남자친구와 왜 사귀냐, 나랑 사귀자", "데이트 가자", "엄마를 소개시켜 달라"고 함</td></tr>
+        <tr><td>B</td><td>수업 중 뒤에서 안는 식으로 지도하고, 한 의자에 같이 앉아 가르치며 신체 접촉을 많이 함</td></tr>
+        <tr><td>B</td><td>복도에서 얼굴에 손대기, 어깨동무, 허리에 손 두르기, 엉덩이를 툭툭 침</td></tr>
+        <tr><td>B</td><td>단둘이 있을 때 팔을 벌려 안음</td></tr>
+        <tr><td>B</td><td>학과 MT에서 자고 있던 B의 볼에 두 차례 뽀뽀함</td></tr>
+        <tr><td>B</td><td>장애인 교육 신청서를 내러 오자 자기 볼에 뽀뽀하면 받아 주겠다고 해, B가 어쩔 수 없이 뽀뽀함</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span class="no">2</span>재판 과정</h2>
+  <p class="lead">해임 → 이의 제기 기각 → 서울고법에서 교수 승소 → 대법원에서 뒤집힘</p>
+  <ol class="steps">
+    <li class="step"><span class="date">2015. 4. 10.</span><span class="dot"><i></i></span><div class="body"><span class="what">학교법인, 교수 해임</span><span class="desc">성희롱·성추행이 사립학교법상 징계사유에 해당한다고 봄</span></div></li>
+    <li class="step"><span class="date">2015. 5. 7.</span><span class="dot"><i></i></span><div class="body"><span class="what">교원소청심사 청구 <span class="tag n">기각</span></span><span class="desc">교수가 이의를 제기했지만 교원소청심사위원회가 받아들이지 않음</span></div></li>
+    <li class="step"><span class="date">이후</span><span class="dot"><i></i></span><div class="body"><span class="what">행정소송 제기</span><span class="desc">교수가 소청심사 결정을 취소해 달라며 법원에 소송을 냄</span></div></li>
+    <li class="step win-l"><span class="date">2017. 11. 10.</span><span class="dot"><i></i></span><div class="body"><span class="what">서울고법(원심) <span class="tag l">교수 승소</span></span><span class="desc">피해자 진술을 믿기 어렵고, 설령 사실이어도 해임은 지나치게 무겁다고 판단. 학교법인이 상고</span></div></li>
+    <li class="step win-s"><span class="date">2018. 4. 12.</span><span class="dot"><i></i></span><div class="body"><span class="what">대법원 <span class="tag s">파기환송</span></span><span class="desc">원심 판단이 잘못되었다며 판결을 깨고 서울고법으로 돌려보냄. 이때 '성인지 감수성'이 처음 등장</span></div></li>
+  </ol>
+  <p class="note"><b>원심</b>: 대법원 바로 아래 단계의 재판(여기서는 서울고법). <b>파기환송</b>: 원심 판결을 깨뜨리고(파기) 다시 재판하라고 돌려보냄(환송).</p>
+</section>
+
+<section class="sec" id="issues">
+  <h2><span class="no">3</span>핵심 쟁점과 양측 판단</h2>
+  <p class="lead">판결문에 교수와 학교의 주장이 따로 정리되어 있지는 않습니다. 그래서 교수 손을 들어준 <b style="color:var(--lower)">원심의 논리</b>와 이를 뒤집은 <b style="color:var(--supreme)">대법원의 논리</b>를 양쪽 입장으로 맞세웠습니다.</p>
+  <div class="toolbar">
+    <span>수업 중에는 원심 논리만 먼저 보여 주고 판단하게 한 뒤 공개해 보세요.</span>
+    <button type="button" id="toggle" aria-pressed="false">대법원 판단 가리기</button>
+  </div>
+
+  <div class="issue">
+    <div class="issue-q"><span class="n">쟁점 1</span><h3>피해 학생들의 말을 믿을 수 있는가</h3></div>
+    <div class="legend"><span class="l">원심 · 교수 측 논리</span><span class="s">대법원 판단</span></div>
+    <div class="pair">
+      <div class="side l"><div class="who">원심 · 교수 측 논리</div>A는 익명 강의평가에서 문제 행동을 언급하지 않고 교수를 좋게 평가했다. 그 뒤에도 계속 수업을 들었다.</div>
+      <div class="side s"><div class="who">대법원 판단</div><span class="cover">대법원은? (눌러서 보기)</span><span class="txt">2차 피해가 두려워 피해를 당한 뒤에도 가해자와 이전 관계를 유지하는 경우가 있다. 이런 사정만으로 진술을 가볍게 배척한 것은 충분히 심리한 결론이 아니다.</span></div>
+    </div>
+    <div class="pair">
+      <div class="side l"><div class="who">원심 · 교수 측 논리</div>B는 2013~2014년 상반기 일을 2014년 12월에야 진술서로 냈다. A의 권유가 없었다면 신고했을지 의심스럽다.</div>
+      <div class="side s"><div class="who">대법원 판단</div><span class="cover">대법원은? (눌러서 보기)</span><span class="txt">바로 신고하지 못하다가 다른 피해자의 문제 제기나 권유를 계기로 비로소 신고하는 경우도 있다. 이것을 피해 사실 자체를 부정하는 근거로 삼는 것은 적절하지 않다.</span></div>
+    </div>
+    <div class="pair">
+      <div class="side l"><div class="who">원심 · 교수 측 논리</div>B는 자기 피해에 대해서는 수사기관·법원에서 진술을 거부하면서, A의 피해에는 증인으로 나와 말했다. 피해자다운 대응인지 의문이다.</div>
+      <div class="side s"><div class="who">대법원 판단</div><span class="cover">대법원은? (눌러서 보기)</span><span class="txt">피해를 신고한 뒤에도 수사기관이나 법원에서 진술에 소극적인 피해자가 적지 않다.</span></div>
+    </div>
+    <p class="verdict"><b>핵심</b>: 원심의 이유는 모두 "진짜 피해자라면 바로 신고하고, 가해자를 피하고, 적극적으로 진술했을 것"이라는 <b>'피해자다움'</b>을 전제로 합니다. 대법원은 피해자가 처한 상황을 보면 그런 행동이 오히려 자연스러울 수 있다고 봤습니다.</p>
+  </div>
+
+  <div class="issue">
+    <div class="issue-q"><span class="n">쟁점 2</span><h3>이 행위들이 성희롱에 해당하는가</h3></div>
+    <div class="legend"><span class="l">원심 · 교수 측 논리</span><span class="s">대법원 판단</span></div>
+    <div class="pair">
+      <div class="side l"><div class="who">원심 · 교수 측 논리</div>교수는 평소 학생들과 격의 없이 지내며 농담, 가족 이야기, 연애 상담을 나눴다. 대화 일부만 떼어 맥락 없이 문제 삼으면 안 된다.</div>
+      <div class="side s"><div class="who">대법원 판단</div><span class="cover">대법원은? (눌러서 보기)</span><span class="txt">대화 일부를 맥락 없이 문제 삼으면 안 된다는 것 자체는 옳다. 그러나 친한 사이였다는 이유를 드는 것은 법원이 가해자 중심적 사고로 평가했다는 오해를 부를 수 있다.</span></div>
+    </div>
+    <div class="pair">
+      <div class="side l"><div class="who">원심 · 교수 측 논리</div>신체 접촉은 적극적인 교수법에서 비롯되었다. 일반적이고 평균적인 사람이 성적 굴욕감이나 혐오감을 느낄 정도는 아니다.</div>
+      <div class="side s"><div class="who">대법원 판단</div><span class="cover">대법원은? (눌러서 보기)</span><span class="txt">사회 전체의 평균인이 아니라 <b>피해자와 같은 처지의 평균인</b> 기준으로 봐야 한다. 교수와 학생이라는 관계, 실습실·연구실이라는 장소, 추천서를 빌미로 한 점, 계속 이어진 정황을 따져야 한다.</span></div>
+    </div>
+    <p class="verdict"><b>핵심</b>: 같은 말이나 행동도 성적과 추천서를 쥔 교수 앞의 학생과 대등한 친구 사이에서는 무게가 다릅니다. 대법원은 판단의 눈높이를 피해자 쪽으로 옮겼습니다.</p>
+  </div>
+
+  <div class="issue">
+    <div class="issue-q"><span class="n">쟁점 3</span><h3>해임은 너무 무거운 징계인가</h3></div>
+    <div class="legend"><span class="l">원심 · 교수 측 논리</span><span class="s">대법원 판단</span></div>
+    <div class="pair">
+      <div class="side l"><div class="who">원심 · 교수 측 논리</div>적극적으로 수업하고 친하게 지내던 중 고의 없이 생긴 일이다. 학생들도 당시엔 심각하게 받아들이지 않다가 3개월~1년 넘게 지나 신고했다. 해임은 재량권을 벗어난 지나친 징계다.</div>
+      <div class="side s"><div class="who">대법원 판단</div><span class="cover">대법원은? (눌러서 보기)</span><span class="txt">따로 판단하지 않았다. 징계사유(성희롱 사실) 판단부터 잘못되었으므로, 나머지 문제는 다시 심리하라며 원심으로 돌려보냈다.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span class="no">4</span>'성인지 감수성'이 등장한 문장</h2>
+  <blockquote>법원이 성희롱 관련 소송의 심리를 할 때에는 그 사건이 발생한 맥락에서 성차별 문제를 이해하고 양성평등을 실현할 수 있도록 <mark>'성인지 감수성'</mark>을 잃지 않아야 한다.<cite>대법원 2017두74702 판결 (양성평등기본법 제5조 제1항 참조)</cite></blockquote>
+  <p>대법원은 이 문장에 이어 왜 그래야 하는지를 세 단계로 설명했습니다.</p>
+  <div class="chain">
+    <div><b>① 2차 피해가 있다</b>가해자 중심적인 문화와 인식 때문에, 피해자는 피해를 알리는 과정에서 부정적 반응이나 불이익을 겪을 수 있다.</div>
+    <div><b>② 그래서 행동이 다양하다</b>가해자와 관계를 유지하거나, 늦게 신고하거나, 남의 권유로 신고하거나, 진술에 소극적일 수 있다.</div>
+    <div><b>③ 무시하면 잘못된 판단</b>이런 사정을 고려하지 않고 진술을 가볍게 배척하는 것은 논리와 경험의 법칙에 맞는 증거 판단이 아니다.</div>
+  </div>
+  <p class="oneline">한 줄로: 피해자의 말을 평가할 때 '피해자다움'이라는 고정관념 대신, 피해자가 실제로 처한 상황과 2차 피해의 위험을 함께 보라는 요구입니다.</p>
+  <p class="note">판결은 성인지 감수성의 뜻을 따로 정의하지 않았습니다. 그래서 이후 이 말의 의미와 적용 범위를 두고 해석이 갈렸습니다. 용어 자체는 1995년 베이징 제4차 유엔 세계여성대회에서 쓰인 gender sensitivity를 옮긴 것입니다.</p>
+</section>
+
+<section class="sec">
+  <h2><span class="no">5</span>행정소송에서 형사재판으로</h2>
+  <div class="tbl-wrap later">
+    <table>
+      <thead><tr><th>판결</th><th>사건</th><th>의미</th></tr></thead>
+      <tbody>
+        <tr><td class="caseno">2018. 4. 12.<br>2017두74702</td><td>대학교수 성희롱 해임 (행정소송)</td><td>성인지 감수성 첫 등장</td></tr>
+        <tr><td class="caseno">2018. 10. 25.<br>2018도7709</td><td>강간·특수상해·협박 등 (형사재판)</td><td>같은 법리를 형사 성범죄 재판에 처음 적용</td></tr>
+        <tr><td class="caseno">2019. 9. 9.<br>2019도2562</td><td>안희정 전 충남지사 사건 (형사재판)</td><td>1심 무죄 → 2심 유죄, 대법원 확정. 사회적으로 널리 알려짐</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="debate">
+    <div>
+      <h3>지지하는 쪽</h3>
+      <ul>
+        <li>성범죄는 목격자나 물증이 적어 피해자 진술이 핵심 증거인 경우가 많다. 고정관념으로 진술을 버리면 실제 피해자가 보호받지 못한다.</li>
+        <li>무조건 믿으라는 뜻이 아니다. 진술의 일관성, 다른 증거와 맞는지는 여전히 따진다.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>비판하는 쪽</h3>
+      <ul>
+        <li>형사재판의 <b>무죄추정</b> 원칙과 <b>증거재판주의</b>를 약화시킬 수 있다.</li>
+        <li>증명 기준이 낮은 행정소송의 법리를 형사재판에 그대로 옮긴 것이 적절한지 의문이다.</li>
+        <li>개념이 정의되지 않아 판사마다 다르게 적용할 수 있다.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span class="no">6</span>생각해 볼 질문</h2>
+  <ol class="q">
+    <li>원심의 논리 가운데 가장 설득력 있어 보이는 것과 가장 문제가 있어 보이는 것은 각각 무엇인가?</li>
+    <li>'피해자와 같은 처지의 평균인' 기준으로 판단하면 무엇이 좋아지고, 어떤 위험이 생길 수 있는가?</li>
+    <li>'피해자다움'이라는 고정관념이 학교폭력, 직장 내 괴롭힘 같은 다른 사건에서도 나타날 수 있을까?</li>
+    <li>성인지 감수성은 무죄추정의 원칙과 충돌하는가, 함께 갈 수 있는가? 입장과 근거를 써 보자.</li>
+  </ol>
+</section>
+
+<footer class="src">
+  <b>출처</b>
+  <a href="https://www.scourt.go.kr/sjudge/1523855072236_140432.pdf" target="_blank" rel="noopener">대법원 2018. 4. 12. 선고 2017두74702 판결 원문</a>
+  <a href="https://www.scourt.go.kr/sjudge/1540795944175_155224.pdf" target="_blank" rel="noopener">대법원 2018. 10. 25. 선고 2018도7709 판결 원문</a>
+  <a href="https://www.scourt.go.kr/sjudge/1568605200965_124000.pdf" target="_blank" rel="noopener">대법원 2019. 9. 9. 선고 2019도2562 판결 원문</a>
+  <a href="https://www.lawtimes.co.kr/news/161612" target="_blank" rel="noopener">법률신문, 법관들 '젠더관련 판결 분석' 자료집 발간</a>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var btn=document.getElementById('toggle'), sec=document.getElementById('issues');
+  function set(on){sec.classList.toggle('hide-s',on);btn.setAttribute('aria-pressed',on?'true':'false');btn.textContent=on?'대법원 판단 보이기':'대법원 판단 가리기';}
+  btn.addEventListener('click',function(){set(btn.getAttribute('aria-pressed')!=='true');});
+  sec.addEventListener('click',function(e){var s=e.target.closest('.side.s');if(s&&sec.classList.contains('hide-s')){s.classList.toggle('peek');}});
+})();
+</script>
+<style>.hide-s .side.s.peek .txt{visibility:visible}.hide-s .side.s.peek .cover{display:none}.hide-s .side.s{cursor:pointer}</style>
+
+</body>
+</html>

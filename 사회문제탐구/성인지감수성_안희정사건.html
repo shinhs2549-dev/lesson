@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>안희정 사건 판결</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;700;900&display=swap">
+<style>
+/* Layout: 판결문을 읽어 내려가는 단일 칼럼. 원심(교수 측 손) ↔ 대법원 판단을 좌우로 맞세운다 */
+:root{
+  --bg:#f3f5f7; --paper:#ffffff; --ink:#18202c; --muted:#5b6677; --line:#d9dee6;
+  --lower:#a35a1f; --lower-bg:#fbf1e8;      /* 원심·교수 측 */
+  --supreme:#24548a; --supreme-bg:#eaf1f9;  /* 대법원 */
+  --mark:#7a2f4b;
+  --f-display:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --paper:#1a2029; --ink:#e7ebf1; --muted:#9aa5b5; --line:#2c3440;
+  --lower:#e39a5c; --lower-bg:#2a2018; --supreme:#7fb0e6; --supreme-bg:#17243a; --mark:#d98aa8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --paper:#1a2029; --ink:#e7ebf1; --muted:#9aa5b5; --line:#2c3440;
+  --lower:#e39a5c; --lower-bg:#2a2018; --supreme:#7fb0e6; --supreme-bg:#17243a; --mark:#d98aa8; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.7;word-break:keep-all}
+.wrap{max-width:900px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:56px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.3;margin:0}
+h1{font-size:clamp(28px,5vw,42px);font-weight:900}
+h2{font-size:clamp(22px,3.4vw,28px);font-weight:700;display:flex;gap:12px;align-items:baseline}
+h2 .no{font-family:var(--f-body);font-size:14px;font-weight:600;color:var(--muted);letter-spacing:.08em}
+h3{font-size:19px;font-weight:700}
+p{margin:0}
+.sec{display:grid;gap:20px}
+.lead{color:var(--muted);max-width:62ch}
+.caseno{font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+
+/* 머리 */
+header{display:grid;gap:14px;border-bottom:3px double var(--line);padding-bottom:28px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.12em;color:var(--muted)}
+.stamp{display:inline-flex;flex-wrap:wrap;gap:8px 16px;font-size:15px;color:var(--muted)}
+.stamp b{color:var(--ink)}
+
+/* 행정 vs 형사 */
+.key{background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--mark);border-radius:6px;padding:22px 24px;display:grid;gap:16px}
+.key p strong{color:var(--mark)}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:15.5px}
+th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+thead th{font-size:13.5px;letter-spacing:.04em;color:var(--muted);font-weight:600}
+td:first-child{font-weight:600;white-space:nowrap}
+.hl{background:color-mix(in srgb,var(--mark) 10%,transparent)}
+
+/* 당사자 */
+.parties{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.party{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:grid;gap:4px;min-width:0}
+.party .role{font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+.party .who{font-weight:700;font-size:17px}
+.party .note{font-size:14.5px;color:var(--muted)}
+.acts{background:var(--paper);border:1px solid var(--line);border-radius:6px}
+.acts td:first-child{width:72px;text-align:center}
+
+/* 재판 과정 */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:0;position:relative}
+.step{display:grid;grid-template-columns:118px 28px 1fr;gap:0 14px;align-items:start}
+.step .date{font-variant-numeric:tabular-nums;font-size:14.5px;color:var(--muted);padding-top:3px;text-align:right}
+.step .dot{position:relative;height:100%;display:flex;justify-content:center}
+.step .dot::before{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--line)}
+.step:first-child .dot::before{top:10px}
+.step:last-child .dot::before{bottom:auto;height:10px}
+.step .dot i{position:relative;width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--muted);margin-top:6px}
+.step.win-l .dot i{border-color:var(--lower);background:var(--lower)}
+.step.win-s .dot i{border-color:var(--supreme);background:var(--supreme);width:18px;height:18px;margin-top:4px}
+.step .body{padding-bottom:22px;display:grid;gap:4px;min-width:0}
+.step .what{font-weight:700}
+.tag{display:inline-block;font-size:12.5px;font-weight:600;padding:1px 9px;border-radius:999px;margin-left:6px;vertical-align:2px;white-space:nowrap}
+.tag.l{color:var(--lower);background:var(--lower-bg)}
+.tag.s{color:var(--supreme);background:var(--supreme-bg)}
+.tag.n{color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent)}
+.step .desc{font-size:15.5px;color:var(--muted)}
+@media (max-width:560px){.step{grid-template-columns:22px 1fr}.step .date{grid-column:2;text-align:left;padding:0}.step .dot{grid-row:1/span 2;grid-column:1}.step .body{grid-column:2}}
+
+/* 쟁점 */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:12px 16px}
+.toolbar span{font-size:15px;color:var(--muted)}
+button{font:inherit;font-size:15px;font-weight:600;border:1.5px solid var(--supreme);color:var(--supreme);background:transparent;border-radius:6px;padding:7px 14px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--supreme);color:var(--paper)}
+button:focus-visible{outline:3px solid color-mix(in srgb,var(--supreme) 45%,transparent);outline-offset:2px}
+.issue{display:grid;gap:14px}
+.issue-q{display:flex;gap:12px;align-items:baseline}
+.issue-q .n{font-family:var(--f-display);font-weight:900;font-size:22px;color:var(--mark)}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13.5px;font-weight:600;letter-spacing:.04em}
+.legend .l{color:var(--lower)} .legend .s{color:var(--supreme)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.side{border-radius:6px;padding:14px 16px;font-size:15.5px;min-width:0}
+.side.l{background:var(--lower-bg);border:1px solid color-mix(in srgb,var(--lower) 30%,transparent)}
+.side.s{background:var(--supreme-bg);border:1px solid color-mix(in srgb,var(--supreme) 30%,transparent);position:relative}
+.side .who{display:none;font-size:12.5px;font-weight:700;margin-bottom:4px}
+.side.l .who{color:var(--lower)} .side.s .who{color:var(--supreme)}
+.cover{display:none}
+.hide-s .side.s .txt{visibility:hidden}
+.hide-s .side.s .cover{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;color:var(--supreme);font-weight:600;font-size:15px}
+.verdict{font-size:15.5px;border-top:1px dashed var(--line);padding-top:12px}
+.verdict b{color:var(--mark)}
+@media (max-width:640px){.pair,.legend{grid-template-columns:1fr}.legend{display:none}.side .who{display:block}}
+
+/* 판시 */
+blockquote{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:24px 26px;font-family:var(--f-display);font-size:clamp(18px,2.4vw,21px);font-weight:600;line-height:1.75}
+blockquote mark{background:color-mix(in srgb,var(--mark) 16%,transparent);color:inherit;padding:0 3px;border-radius:3px}
+blockquote cite{display:block;margin-top:10px;font-family:var(--f-body);font-style:normal;font-size:14px;font-weight:500;color:var(--muted)}
+.chain{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;counter-reset:c}
+.chain div{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px;font-size:15.5px;display:grid;gap:6px;align-content:start;min-width:0}
+.chain b{font-size:16px}
+@media (max-width:640px){.chain{grid-template-columns:1fr}}
+.oneline{font-weight:600;border-left:4px solid var(--mark);padding:4px 0 4px 14px}
+
+/* 이후 */
+.later{background:var(--paper);border:1px solid var(--line);border-radius:6px}
+.debate{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.debate div{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px 18px;min-width:0}
+.debate h3{font-size:17px;margin-bottom:8px}
+.debate ul{margin:0;padding-left:18px;font-size:15.5px;display:grid;gap:6px}
+@media (max-width:640px){.debate{grid-template-columns:1fr}}
+
+ol.q{margin:0;padding-left:22px;display:grid;gap:10px}
+.src{font-size:14px;color:var(--muted);display:grid;gap:4px}
+.src a{color:var(--supreme)}
+.note{font-size:14.5px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){button{transition:background .15s,color .15s}}
+</style>
+</head>
+<body>
+<style>.hide-s .side.s.peek .txt{visibility:visible}.hide-s .side.s.peek .cover{display:none}.hide-s .side.s{cursor:pointer}</style>
+
+<div class="wrap" id="top">
+
+<header>
+  <div class="eyebrow">사회문제 탐구 · 판결 읽기</div>
+  <h1>같은 증거, 정반대의 판결</h1>
+  <p class="lead">안희정 전 충남지사 수행비서 성폭력 사건. 1심 무죄가 2심에서 유죄로 뒤집혔고, <span class="caseno">대법원 2019. 9. 9. 선고 2019도2562 판결</span>로 확정되었습니다.</p>
+  <div class="stamp"><span>죄명 <b>피감독자간음, 업무상 위력 추행, 강제추행</b></span><span>최종 결과 <b>징역 3년 6개월 확정</b></span><span>재판부 <b>대법원 제2부</b></span></div>
+</header>
+
+<section class="sec">
+  <div class="key">
+    <p><strong>교수 사건과 무엇이 다를까요?</strong> 교수 사건은 해임이 정당한지를 다툰 <strong>행정소송</strong>이었습니다. 이 사건은 피고인을 처벌할지를 다툰 <strong>형사재판</strong>입니다. 증명의 문턱이 훨씬 높은 형사재판에서 성인지 감수성이 결론을 가른 대표 사례입니다.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th></th><th>교수 사건 (2017두74702)</th><th>이 사건 (2019도2562)</th></tr></thead>
+        <tbody>
+          <tr><td>재판 종류</td><td>행정소송</td><td class="hl">형사재판</td></tr>
+          <tr><td>무엇을 다투나</td><td>해임이 정당한가</td><td class="hl">유죄인가, 처벌할 것인가</td></tr>
+          <tr><td>증명의 정도</td><td>고도의 개연성</td><td class="hl">합리적 의심이 없을 정도</td></tr>
+          <tr><td>성인지 감수성 문장</td><td>"<b>성희롱</b> 관련 소송의 심리를 할 때"</td><td class="hl">"<b>성폭행이나 성희롱</b> 사건의 심리를 할 때"</td></tr>
+          <tr><td>대법원 결론</td><td>원심(교수 승소) 파기환송</td><td>원심(유죄) 그대로 확정</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span class="no">1</span>사건 개요</h2>
+  <div class="parties">
+    <div class="party"><span class="role">피고인</span><span class="who">안희정 전 충남지사</span><span class="note">당시 도지사, 차기 대선 주자로 거론되던 유력 정치인</span></div>
+    <div class="party"><span class="role">피해자</span><span class="who">도지사 수행비서</span><span class="note">별정직 공무원. 도지사가 임면권을 가진 자리</span></div>
+    <div class="party"><span class="role">기소</span><span class="who">검사</span><span class="note">'권력형 성범죄'로 규정하고 징역 4년 구형</span></div>
+  </div>
+  <p>2017년 7월부터 2018년 2월까지 해외 출장 수행 등을 하던 기간에 일어난 일로, 공소사실은 모두 10건입니다.</p>
+  <div class="tbl-wrap acts">
+    <table>
+      <thead><tr><th>죄명</th><th>건수</th><th>1심</th><th>2심 · 대법원</th></tr></thead>
+      <tbody>
+        <tr><td>피감독자간음 (업무상 위력에 의한 간음)</td><td>4</td><td><span class="tag l">무죄</span></td><td><span class="tag s">유죄 4</span></td></tr>
+        <tr><td>업무상 위력에 의한 추행</td><td>1</td><td><span class="tag l">무죄</span></td><td><span class="tag s">유죄 1</span></td></tr>
+        <tr><td>강제추행</td><td>5</td><td><span class="tag l">무죄</span></td><td><span class="tag s">유죄 4</span> <span class="tag n">무죄 1</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note"><b>피감독자간음</b>: 업무나 고용 관계로 자기의 보호·감독을 받는 사람을 위계나 위력으로 간음하는 죄(형법 제303조). <b>위력</b>: 피해자의 자유의사를 제압하기에 충분한 힘. 폭행 같은 유형력뿐 아니라 사회적·정치적 지위나 권세를 이용하는 것도 포함됩니다.</p>
+</section>
+
+<section class="sec">
+  <h2><span class="no">2</span>재판 과정</h2>
+  <p class="lead">폭로 → 기소 → 1심 전부 무죄 → 2심 대부분 유죄 → 대법원 확정</p>
+  <ol class="steps">
+    <li class="step"><span class="date">2018. 3.</span><span class="dot"><i></i></span><div class="body"><span class="what">피해자가 방송 인터뷰로 피해 공개</span><span class="desc">'미투' 운동이 확산되던 시기. 피고인은 SNS에 사과한 뒤 도지사직에서 물러남</span></div></li>
+    <li class="step"><span class="date">2018. 4. 11.</span><span class="dot"><i></i></span><div class="body"><span class="what">불구속 기소 <span class="tag n">10건</span></span><span class="desc">수사 단계에서 피고인은 합의에 의한 관계였다고 주장</span></div></li>
+    <li class="step win-l"><span class="date">2018. 8. 14.</span><span class="dot"><i></i></span><div class="body"><span class="what">1심 서울서부지법 <span class="tag l">전부 무죄</span></span><span class="desc">위력은 있었지만 행사되었다는 증거가 부족하고, 피해자 진술을 그대로 믿기 어렵다고 판단</span></div></li>
+    <li class="step win-s"><span class="date">2019. 2. 1.</span><span class="dot"><i></i></span><div class="body"><span class="what">2심 서울고법 <span class="tag s">9건 유죄</span></span><span class="desc">징역 3년 6개월 선고, 법정구속. 위력 행사와 피해자 진술 신빙성을 모두 인정</span></div></li>
+    <li class="step win-s"><span class="date">2019. 9. 9.</span><span class="dot"><i></i></span><div class="body"><span class="what">대법원 <span class="tag s">상고 기각 · 확정</span></span><span class="desc">피고인과 검사의 상고를 모두 기각. 2심 판단에 잘못이 없다고 봄</span></div></li>
+  </ol>
+  <p class="note"><b>법정구속</b>: 불구속 상태로 재판받던 피고인을 선고 직후 법정에서 구속하는 것. <b>상고 기각</b>: 대법원이 원심 판결을 그대로 유지하는 것.</p>
+</section>
+
+<section class="sec" id="issues">
+  <h2><span class="no">3</span>핵심 쟁점과 양측 판단</h2>
+  <p class="lead">무죄를 선고한 <b style="color:var(--lower)">1심의 논리(피고인 측이 받아들여진 쪽)</b>와 유죄를 선고하고 확정한 <b style="color:var(--supreme)">2심·대법원의 논리</b>를 맞세웠습니다. 두 법원은 같은 증거를 보고 정반대 결론을 냈습니다.</p>
+  <div class="toolbar">
+    <span>1심 논리만 먼저 보여 주고 판단하게 한 뒤 공개해 보세요.</span>
+    <button type="button" id="toggle" aria-pressed="false">2심·대법원 판단 가리기</button>
+  </div>
+
+  <div class="issue">
+    <div class="issue-q"><span class="n">쟁점 1</span><h3>'위력'이 있었고, 실제로 행사되었는가</h3></div>
+    <div class="legend"><span class="l">1심 · 무죄</span><span class="s">2심 · 대법원 · 유죄</span></div>
+    <div class="pair">
+      <div class="side l"><div class="who">1심 · 무죄</div>유력 정치인이자 비서의 임면권을 가진 도지사였으므로 위력이 <b>존재</b>한 것은 맞다.</div>
+      <div class="side s"><div class="who">2심 · 대법원 · 유죄</div><span class="cover">2심은? (눌러서 보기)</span><span class="txt">위력의 존재는 같은 판단. 피고인의 지위와 권세 자체가 피해자의 자유의사를 제압하기에 충분한 무형의 힘이었다.</span></div>
+    </div>
+    <div class="pair">
+      <div class="side l"><div class="who">1심 · 무죄</div>그러나 도청에서 위력을 일상적으로 휘두르거나, 간음·추행 당시 위력을 <b>행사</b>해 피해자를 제압했다는 증거는 부족하다. 저항을 불가능하게 할 물리력도 드러나지 않았다.</div>
+      <div class="side s"><div class="who">2심 · 대법원 · 유죄</div><span class="cover">2심은? (눌러서 보기)</span><span class="txt">피해자를 객실로 들어오게 한 뒤 저항하지 못하는 상태에서 간음한 것은 위력의 <b>행사</b>다. 피해자의 거처조차 본인 뜻이 아니라 리더의 의지와 조직의 필요로 정해지는 관계였다.</span></div>
+    </div>
+    <p class="verdict"><b>핵심</b>: 1심은 위력을 '눈에 보이는 강제'가 있어야 행사된 것으로 좁게 봤고, 2심은 권력 관계 자체가 작동한 상황을 위력 행사로 넓게 봤습니다.</p>
+  </div>
+
+  <div class="issue">
+    <div class="issue-q"><span class="n">쟁점 2</span><h3>피해자의 말을 믿을 수 있는가</h3></div>
+    <div class="legend"><span class="l">1심 · 무죄</span><span class="s">2심 · 대법원 · 유죄</span></div>
+    <div class="pair">
+      <div class="side l"><div class="who">1심 · 무죄</div><b>피고인 측 주장</b>: 피해 당일 와인바에 동행했고, 다음 날 피고인이 좋아하는 식당을 알아봤으며, 지인에게 'ㅋㅋ' 같은 문자를 보냈다. 성범죄 피해자가 보일 수 없는 행동이다.<br>1심도 범행 전후 피해자의 언행을 보면 위력에 제압된 상태로 보기 어렵다고 판단했다.</div>
+      <div class="side s"><div class="who">2심 · 대법원 · 유죄</div><span class="cover">2심은? (눌러서 보기)</span><span class="txt">식당을 알아본 것은 수행비서의 통상 업무였다. 폭로하지 않고 업무를 계속했다고 피해자답지 않다고 볼 수 없다. 정형화된 피해자의 반응만 정상으로 보는 것은 편협한 관점이다.</span></div>
+    </div>
+    <div class="pair">
+      <div class="side l"><div class="who">1심 · 무죄</div>중요한 증거인 텔레그램 대화가 대부분 삭제되어 의문이 간다. 쟁점이 된 일부 사건에 대한 피해자 설명은 객관적 증거와 맞지 않거나 납득하기 어렵다.</div>
+      <div class="side s"><div class="who">2심 · 대법원 · 유죄</div><span class="cover">2심은? (눌러서 보기)</span><span class="txt">피해자 진술은 주요 부분이 일관되고, 당시 상황과 감정을 직접 겪지 않고는 말하기 어려울 만큼 구체적이다. 사소한 불일치가 있어도 진정성을 쉽게 배척해서는 안 된다.</span></div>
+    </div>
+    <div class="pair">
+      <div class="side l"><div class="who">1심 · 무죄</div>진술의 흔들림이 2차 피해의 충격 때문인지, 피고인이 피해자를 길들여 무기력하게 만든 것인지도 살폈지만 그렇다고 단정할 증거는 없다.</div>
+      <div class="side s"><div class="who">2심 · 대법원 · 유죄</div><span class="cover">대법원은? (눌러서 보기)</span><span class="txt">피해자가 허위로 피고인에게 불리한 진술을 할 동기가 분명하지 않다면 진술을 함부로 배척할 수 없다. 피해자의 범행 전후 언행을 이유로 진술을 배척하지 않은 2심 판단에 잘못이 없다.</span></div>
+    </div>
+    <p class="verdict"><b>핵심</b>: 교수 사건과 같은 구도입니다. 1심은 피해자의 행동이 '피해자다운지'를 따졌고, 2심과 대법원은 지사와 비서라는 관계 속에서 그런 행동이 충분히 있을 수 있다고 봤습니다.</p>
+  </div>
+
+  <div class="issue">
+    <div class="issue-q"><span class="n">쟁점 3</span><h3>동의가 있었는가, '나름의 거절'은 처벌 대상인가</h3></div>
+    <div class="legend"><span class="l">1심 · 무죄</span><span class="s">2심 · 대법원 · 유죄</span></div>
+    <div class="pair">
+      <div class="side l"><div class="who">1심 · 무죄</div>피해자가 동의를 분명히 표현하지 않고 나름의 방식으로 거절했다 해도, 현재 성폭력 처벌 체계에서는 성폭력 범죄로 볼 수 없다. 상대의 적극적 동의 없는 성관계를 처벌할지는 입법 정책의 문제다.</div>
+      <div class="side s"><div class="who">2심 · 대법원 · 유죄</div><span class="cover">2심은? (눌러서 보기)</span><span class="txt">간음 전에 명시적 합의가 있었다고 보기 어렵고, 합의에 의한 관계였다는 피고인 진술은 믿기 어렵다. 피고인의 행위는 위력으로 피해자의 성적 자기결정권을 침해한 것이다.</span></div>
+    </div>
+    <p class="verdict"><b>핵심</b>: 1심은 현행법의 빈틈을 이유로 들며 판단을 입법부에 넘겼고, 2심은 현행 '위력' 조항 안에서 처벌할 수 있다고 봤습니다.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span class="no">4</span>대법원이 다시 쓴 '성인지 감수성'</h2>
+  <blockquote>법원이 <mark>성폭행이나 성희롱 사건</mark>의 심리를 할 때에는 그 사건이 발생한 맥락에서 성차별 문제를 이해하고 양성평등을 실현할 수 있도록 '성인지 감수성'을 잃지 않도록 유의하여야 한다.<cite>대법원 2019도2562 판결 (2018도7709 판결 등 참조)</cite></blockquote>
+  <p>교수 사건의 문장과 거의 같지만, 대상이 '성희롱 관련 소송'에서 '<b>성폭행</b>이나 성희롱 사건'으로 넓어졌습니다. 대법원은 이어서 다음과 같이 설명했습니다.</p>
+  <div class="chain">
+    <div><b>① 대처 방식은 사람마다 다르다</b>성폭행 피해자의 대처는 피해자의 성격, 가해자와의 관계, 구체적인 상황에 따라 다르게 나타날 수밖에 없다.</div>
+    <div><b>② 사정을 고려해야 한다</b>피해자가 처한 특별한 사정을 충분히 고려하지 않고 진술의 증명력을 가볍게 배척하는 것은 올바른 증거 판단이 아니다.</div>
+    <div><b>③ 그러나 기준은 유지된다</b>유죄는 여전히 합리적 의심이 없을 정도로 증명되어야 한다. 진술은 일관성, 합리성, 허위 진술 동기 유무를 따져 평가한다.</div>
+  </div>
+  <p class="oneline">한 줄로: 성인지 감수성은 증명의 기준을 낮추는 것이 아니라, 피해자 진술을 평가할 때 '피해자다움'이라는 잣대를 쓰지 말라는 요구라는 것이 대법원의 설명입니다.</p>
+  <p class="note">같은 판결에서 대법원은 검사가 상고한 강제추행 1건에 대해서는 2심의 무죄 판단도 그대로 유지했습니다. 피해자 진술이 있다고 모든 공소사실이 유죄가 된 것은 아닙니다.</p>
+</section>
+
+<section class="sec">
+  <h2><span class="no">5</span>판결에 대한 평가</h2>
+  <div class="debate">
+    <div>
+      <h3>2심·대법원 판결을 지지하는 쪽</h3>
+      <ul>
+        <li>'피해자다움'이라는 통념을 깨고, 권력 관계 속 피해자의 현실을 판단에 반영했다.</li>
+        <li>폭행·협박이 없어도 지위와 권세가 위력이 될 수 있음을 확인해 권력형 성범죄를 처벌할 길을 열었다.</li>
+        <li>진술의 일관성과 구체성을 따졌고, 증명이 부족한 1건은 무죄로 판단해 기준을 지켰다.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>판결을 비판하거나 우려하는 쪽</h3>
+      <ul>
+        <li>직접 증거가 사실상 피해자 진술뿐인데 유죄를 인정해 무죄추정 원칙이 약해질 수 있다.</li>
+        <li>같은 증거로 1심과 2심이 정반대 결론을 냈다. 판사마다 판단이 크게 달라질 위험이 있다.</li>
+        <li>피해자의 사후 행동을 판단에서 배제하면 피고인이 반박할 수단이 줄어든다.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note">이 사건 1심이 "동의 없는 성관계 처벌은 입법의 문제"라고 한 이후, 폭행·협박이 아니라 동의 여부를 기준으로 처벌하는 이른바 '비동의 간음죄' 도입을 두고 사회적 논쟁이 이어졌습니다.</p>
+</section>
+
+<section class="sec">
+  <h2><span class="no">6</span>생각해 볼 질문</h2>
+  <ol class="q">
+    <li>1심과 2심은 같은 증거를 보고 정반대 결론을 냈다. 결론을 가른 가장 큰 차이는 무엇이라고 생각하는가?</li>
+    <li>피해 다음 날 식당을 알아본 행동을 1심과 2심은 어떻게 다르게 해석했는가? 나는 어느 쪽에 동의하는가?</li>
+    <li>'위력이 존재했지만 행사되지는 않았다'는 1심의 논리는 설득력이 있는가?</li>
+    <li>교수 사건(행정소송)과 이 사건(형사재판)에 같은 성인지 감수성 법리를 적용하는 것은 적절한가?</li>
+    <li>"동의 없는 성관계를 처벌할지는 입법의 문제"라는 1심의 지적에 대해 법원과 국회는 각각 어떤 역할을 해야 할까?</li>
+  </ol>
+</section>
+
+<footer class="src">
+  <b>출처</b>
+  <a href="https://www.scourt.go.kr/sjudge/1568605200965_124000.pdf" target="_blank" rel="noopener">대법원 2019. 9. 9. 선고 2019도2562 판결 원문</a>
+  <a href="https://www.newsis.com/view/NISX20180814_0000390506" target="_blank" rel="noopener">뉴시스, 1심 판결 요지 (2018. 8. 14.)</a>
+  <a href="https://www.newsis.com/view/NISX20180814_0000390573" target="_blank" rel="noopener">뉴시스, 1심 재판부의 피해자 진술 판단 (2018. 8. 14.)</a>
+  <a href="https://m.seoul.co.kr/news/2019/02/01/20190201500109" target="_blank" rel="noopener">서울신문, 2심 징역 3년 6개월 (2019. 2. 1.)</a>
+  <a href="https://twig24.com/news/world/crime-law/2019/09/10/20190910006012" target="_blank" rel="noopener">항소심 손들어준 '성인지 감수성' (2019. 9. 10.)</a>
+  <a href="https://www.lawtimes.co.kr/news/articleViewAmp.html?idxno=155655" target="_blank" rel="noopener">법률신문, 징역 3년 6개월 확정 (2019. 9.)</a>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var btn=document.getElementById('toggle'), sec=document.getElementById('issues');
+  function set(on){sec.classList.toggle('hide-s',on);btn.setAttribute('aria-pressed',on?'true':'false');btn.textContent=on?'2심·대법원 판단 보이기':'2심·대법원 판단 가리기';}
+  btn.addEventListener('click',function(){set(btn.getAttribute('aria-pressed')!=='true');});
+  sec.addEventListener('click',function(e){var s=e.target.closest('.side.s');if(s&&sec.classList.contains('hide-s')){s.classList.toggle('peek');}});
+})();
+</script>
+<style>.hide-s .side.s.peek .txt{visibility:visible}.hide-s .side.s.peek .cover{display:none}.hide-s .side.s{cursor:pointer}.acts td:first-child{width:auto;text-align:left;white-space:normal}.acts td:nth-child(2){text-align:center;width:56px}</style>
+
+</body>
+</html>

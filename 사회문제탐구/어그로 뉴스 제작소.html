@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>어그로 뉴스 제작소 (전자칠판)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --bg:#f4f1ea; --paper:#fffdf8; --ink:#1d2a33; --ink-2:#55636d; --line:#e2ddd2;
+  --accent:#1f6f5c; --accent-soft:#e3efe9; --hot:#d9572b; --hot-soft:#fbe9e1; --gold:#b7791f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:20px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input,select{font:inherit;color:inherit}
+.wrap{max-width:1600px;margin:0 auto;padding:28px 40px 60px}
+h1{margin:0;font-size:44px;font-weight:900;letter-spacing:-.03em}
+h1 b{color:var(--hot)}
+.sub{color:var(--ink-2);margin:4px 0 24px;font-size:20px}
+.panel{background:var(--paper);border:2px solid var(--line);border-radius:22px;padding:22px 26px;margin:0 0 18px}
+.panel h2{margin:0 0 12px;font-size:24px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.in{padding:14px 16px;border-radius:12px;border:2px solid var(--line);background:#fff;font-size:20px;min-width:260px}
+.btn{padding:14px 24px;border-radius:14px;background:var(--accent);color:#fff;font-weight:800;font-size:20px}
+.btn.hot{background:var(--hot)}
+.btn.line{background:var(--paper);color:var(--ink);border:2px solid var(--line)}
+.btn.sm{padding:9px 14px;font-size:16px;border-radius:10px}
+.btn:disabled{opacity:.4}
+.sess{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:18px 20px;border-radius:16px;background:#fff;border:2px solid var(--line);margin:0 0 10px;font-weight:700;font-size:22px}
+.sess span{color:var(--ink-2);font-weight:600;font-size:18px}
+/* 수업 화면 */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 18px;flex-wrap:wrap}
+.top .t{font-size:30px;font-weight:900;letter-spacing:-.02em}
+.top .t span{color:var(--ink-2);font-weight:600;font-size:20px;margin-left:10px}
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.step{padding:12px 18px;border-radius:999px;border:2px solid var(--line);background:var(--paper);font-weight:800;font-size:18px;color:var(--ink-2)}
+.step.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.step.done{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+.qr{background:#fff;border:2px solid var(--line);border-radius:22px;padding:18px;text-align:center;position:sticky;top:16px}
+.qr .code{font-size:22px;color:var(--ink-2);margin:8px 0 0}
+.qr .code b{font-size:46px;color:var(--ink);letter-spacing:.08em;display:block;line-height:1.1}
+.qr .url{font-size:14px;color:var(--ink-2);word-break:break-all;margin:6px 0 10px}
+.qr svg{width:100%;height:auto;display:block}
+.big{font-size:64px;font-weight:900;letter-spacing:-.03em;margin:0;line-height:1}
+.big small{font-size:26px;color:var(--ink-2);font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:0 0 18px}
+.stat{background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:16px 20px}
+.stat p{margin:0 0 4px;color:var(--ink-2);font-size:18px;font-weight:600}
+.bars{display:grid;gap:10px}
+.bar{display:grid;grid-template-columns:150px 1fr 70px;gap:12px;align-items:center}
+.bar .lab{font-weight:700}
+.bar .lab small{display:block;color:var(--ink-2);font-weight:500;font-size:14px;line-height:1.2}
+.bar .track{height:30px;background:#efebe2;border-radius:8px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:8px}
+.bar .fill.low{background:var(--hot)}
+.bar .pct{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.names{display:flex;flex-wrap:wrap;gap:8px}
+.name{padding:6px 12px;border-radius:999px;background:#fff;border:2px solid var(--line);font-size:17px;font-weight:600}
+.prog{height:26px;background:#efebe2;border-radius:999px;overflow:hidden;margin:10px 0}
+.prog div{height:100%;background:var(--hot);border-radius:999px;transition:width .4s}
+.news{background:#fff;border:2px solid var(--line);border-radius:18px;padding:20px 24px;margin:0 0 14px}
+.news .tag{display:inline-block;font-size:16px;font-weight:800;color:var(--hot);background:var(--hot-soft);border-radius:8px;padding:3px 10px;margin-bottom:8px}
+.news .tt{font-size:30px;font-weight:900;line-height:1.3;letter-spacing:-.02em;margin:0 0 10px;word-break:keep-all}
+.news .bd{margin:0;color:#33414a;font-size:21px;white-space:pre-wrap;word-break:keep-all}
+.news .meta{margin:10px 0 0;font-size:16px;color:var(--ink-2)}
+.cands{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px}
+.award{border:3px solid #f0c25a;background:#fff8e6;border-radius:22px;padding:22px 26px;margin:0 0 16px}
+.award .n{font-size:34px;font-weight:900;color:var(--gold)}
+.award .d{color:var(--ink-2);font-size:19px;margin:2px 0 12px}
+.winner{font-size:40px;font-weight:900;margin:12px 0 0}
+.winner small{font-size:22px;color:var(--ink-2);font-weight:700;margin-left:8px}
+.muted{color:var(--ink-2)}
+.note{background:#fff7e0;border:2px solid #f0dca0;border-radius:14px;padding:14px 18px;margin:0 0 16px;font-size:18px}
+.err{background:#fbe7e5;border:2px solid #efc3be;border-radius:14px;padding:18px 20px;margin:0 0 16px}
+.err pre{background:#fff;border-radius:10px;padding:12px;font-size:14px;overflow:auto;white-space:pre}
+.modal{position:fixed;inset:0;background:rgba(20,25,28,.7);z-index:30;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:40px 20px}
+.modal.show{display:flex}
+.modal .in-box{background:var(--bg);border-radius:22px;padding:24px 28px;max-width:1100px;width:100%}
+.rev{display:flex;gap:12px;align-items:flex-start;background:#fff;border:2px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 10px}
+.rev .c{flex:1}
+.rev.hid{opacity:.45}
+.qrfull{position:fixed;inset:0;background:#fff;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.qrfull.show{display:flex}
+.qrfull svg{width:min(70vh,80vw);height:auto}
+.qrfull .code{font-size:40px;font-weight:800}
+.qrfull .code b{font-size:72px;letter-spacing:.1em}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.confetti i{position:absolute;top:-20px;width:12px;height:18px;border-radius:3px;animation:fall 2.6s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@media (max-width:1000px){ .grid{grid-template-columns:1fr} .qr{position:static} .cands{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><p class="muted">불러오는 중…</p></div>
+<div class="modal" id="modal"><div class="in-box" id="modalBox"></div></div>
+<div class="qrfull" id="qrfull"></div>
+
+<script src="../_lib/lock.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../_news/content.js"></script>
+<script src="../_news/fb.js"></script>
+<script src="../_news/qrcode.js"></script>
+<script>
+(function(){
+"use strict";
+var U = NEWSUTIL, esc = U.esc;
+var $app = document.getElementById('app');
+var GROUPS = [];             // 명단의 반 목록
+var code = '', sess = null;
+var students = {}, ratings = [], votes = [];
+var unsub = [];
+var showAns = false;      // 활동 1·2 정답을 칠판에 보일지
+
+var RULES = [
+  "match /fakeNews/{code} {",
+  "  allow read, create, update: if request.auth != null;",
+  "  match /{sub=**} {",
+  "    allow read, write: if request.auth != null;",
+  "  }",
+  "}"
+].join('\n');
+
+function fail(e){
+  console.error(e);
+  var perm = FN.isPermission(e);
+  $app.insertAdjacentHTML('afterbegin', '<div class="err"><b>' + (perm ? '저장소 보안 규칙이 아직 들어가지 않았어요.' : '연결에 문제가 생겼어요.') + '</b><br>' +
+    (perm ? 'Firebase 콘솔 → Firestore Database → 규칙(Rules)에서 <code>match /databases/{database}/documents {</code> 안쪽에 아래 내용을 붙여넣고 게시해 주세요.<pre>' + esc(RULES) + '</pre>'
+          : esc(e && e.message || e)) + '</div>');
+}
+
+/* 명단 잠금 해제 = 교사 확인 */
+RosterLock.open('_명단.enc.json').then(function(DATA){
+  GROUPS = (DATA.groups || []).map(function(g){
+    return { id:g.id, label:'사회문제 탐구 ' + g.name.replace(/^사문탐\s*/,''),
+             names:(g.raw||[]).map(function(r){ return String(r[2]||'').replace(/\s*\(.*?\)\s*/g,''); }) };
+  });
+  return FN.ready;
+}).then(home).catch(fail);
+
+/* ---------- 첫 화면: 수업 열기 ---------- */
+function home(){
+  unsub.forEach(function(f){ f(); }); unsub = [];
+  code = ''; sess = null;
+  $app.innerHTML = '<h1>어그로 <b>뉴스</b> 제작소</h1><p class="sub">학생들은 휴대폰으로 QR코드를 찍어 들어옵니다.</p>' +
+    '<div class="panel"><h2>새 수업 열기</h2><div class="row"><select class="in" id="grp">' +
+    GROUPS.map(function(g){ return '<option value="' + esc(g.id) + '">' + esc(g.label) + ' (' + g.names.length + '명)</option>'; }).join('') +
+    '<option value="">직접 입력</option></select><input class="in" id="memo" placeholder="직접 입력할 때 수업 이름" style="display:none">' +
+    '<button class="btn hot" id="newGo">수업 열기</button></div></div>' +
+    '<div class="panel"><h2>오늘 연 수업</h2><div id="today"><p class="muted">불러오는 중…</p></div>' +
+    '<div class="row" style="margin-top:10px"><input class="in" id="codeIn" placeholder="지난 수업 코드 4자리"><button class="btn line" id="codeGo">코드로 열기</button></div></div>';
+  var grp = document.getElementById('grp'), memo = document.getElementById('memo');
+  grp.onchange = function(){ memo.style.display = grp.value ? 'none' : ''; };
+  if (!GROUPS.length) memo.style.display = '';
+  document.getElementById('newGo').onclick = createSession;
+  document.getElementById('codeGo').onclick = function(){
+    var c = document.getElementById('codeIn').value.trim();
+    if (/^\d{4}$/.test(c)) openSession(c);
+  };
+  FN.db.collection('fakeNews').where('day','==',U.today()).get().then(function(snap){
+    var arr = []; snap.forEach(function(d){ arr.push(d.data()); });
+    arr.sort(function(a,b){ return (b.createdMs||0) - (a.createdMs||0); });
+    document.getElementById('today').innerHTML = arr.length ? arr.map(function(s){
+      return '<button class="sess" data-code="' + esc(s.code) + '">' + esc(s.label) + '<span>코드 ' + esc(s.code) + ' · ' + esc(phaseName(s.phase)) + '</span></button>';
+    }).join('') : '<p class="muted">아직 없어요.</p>';
+    Array.prototype.forEach.call(document.querySelectorAll('.sess'), function(b){ b.onclick = function(){ openSession(b.getAttribute('data-code')); }; });
+  }).catch(fail);
+}
+function phaseName(id){ for (var i=0;i<NEWS.phases.length;i++) if (NEWS.phases[i].id===id) return NEWS.phases[i].name; return id; }
+
+function createSession(){
+  var gid = document.getElementById('grp').value;
+  var g = GROUPS.filter(function(x){ return x.id === gid; })[0];
+  var label = g ? g.label : document.getElementById('memo').value.trim();
+  if (!label) return alert('수업 이름을 입력하세요.');
+  var tries = 0;
+  (function attempt(){
+    var c = String(1000 + Math.floor(Math.random() * 9000));
+    FN.session(c).get().then(function(d){
+      if (d.exists && ++tries < 8) return attempt();
+      return FN.session(c).set({ code:c, label:label, groupId:gid || '', day:U.today(), createdMs:Date.now(), createdAt:FN.ts(),
+        phase:'quiz', readOrder:[], candidates:[], revealed:[] }).then(function(){ openSession(c); });
+    }).catch(fail);
+  })();
+}
+
+/* ---------- 수업 화면 ---------- */
+function openSession(c){
+  code = c; students = {}; ratings = []; votes = [];
+  unsub.forEach(function(f){ f(); }); unsub = [];
+  unsub.push(FN.session(c).onSnapshot(function(d){
+    if (!d.exists){ alert('수업을 찾을 수 없어요.'); return home(); }
+    sess = d.data(); draw();
+  }, fail));
+  unsub.push(FN.students(c).onSnapshot(function(s){ students = {}; s.forEach(function(d){ students[d.id] = d.data(); }); draw(); }, fail));
+  unsub.push(FN.ratings(c).onSnapshot(function(s){ ratings = []; s.forEach(function(d){ ratings.push(d.data()); }); draw(); }, fail));
+  unsub.push(FN.votes(c).onSnapshot(function(s){ votes = []; s.forEach(function(d){ votes.push(d.data()); }); draw(); }, fail));
+}
+
+function studentUrl(){ return new URL('../_news/?s=' + code, location.href).href; }
+function qrSvg(cell){
+  var q = qrcode(0, 'M'); q.addData(studentUrl()); q.make();
+  return q.createSvgTag({ cellSize:cell || 8, margin:2, scalable:true });
+}
+function list(){ return Object.keys(students).map(function(k){ return students[k]; }); }
+function articles(){ return list().filter(function(s){ return s.article && !s.hiddenByTeacher; }); }
+
+function computeOrder(){
+  return articles().map(function(s){ return s.sid; })
+    .sort(function(a,b){ return U.hash(code + a) - U.hash(code + b); });
+}
+function ratingStats(){
+  var m = {};
+  ratings.forEach(function(r){
+    var x = m[r.target] || (m[r.target] = { sum:0, n:0 });
+    x.sum += r.stars; x.n++;
+  });
+  Object.keys(m).forEach(function(k){ m[k].avg = m[k].sum / m[k].n; });
+  return m;
+}
+function computeCandidates(){
+  var st = ratingStats(), order = (sess.readOrder && sess.readOrder.length) ? sess.readOrder : computeOrder();
+  return order.filter(function(id){ return students[id] && students[id].article && !students[id].hiddenByTeacher; })
+    .sort(function(a,b){
+      var A = st[a] || {avg:0,n:0}, B = st[b] || {avg:0,n:0};
+      return (B.avg - A.avg) || (B.n - A.n);
+    }).slice(0, NEWS.CANDIDATES);
+}
+function tally(awardId){
+  var m = {};
+  votes.forEach(function(v){ if (v[awardId]) m[v[awardId]] = (m[v[awardId]] || 0) + 1; });
+  return m;
+}
+function pickWinner(awardId){
+  var t = tally(awardId), st = ratingStats();
+  var taken = (sess.revealed || []).filter(function(r){ return r.award !== awardId; }).map(function(r){ return r.sid; });
+  var c = (sess.candidates || []).filter(function(id){ return taken.indexOf(id) < 0; })
+    .sort(function(a,b){ return ((t[b]||0) - (t[a]||0)) || (((st[b]||{}).avg||0) - ((st[a]||{}).avg||0)); });
+  return c[0] ? { sid:c[0], votes:t[c[0]] || 0 } : null;
+}
+
+function setPhase(p){
+  var cur = NEWS.phases.map(function(x){ return x.id; });
+  var back = cur.indexOf(p) < cur.indexOf(sess.phase);
+  if (back && !confirm(phaseName(p) + ' 단계로 돌아갈까요?')) return;
+  var up = { phase:p };
+  if (p === 'read' && (!sess.readOrder || !sess.readOrder.length || !back)) {
+    up.readOrder = computeOrder();
+    if (!up.readOrder.length && !confirm('제출된 기사가 없어요. 그래도 넘어갈까요?')) return;
+  }
+  if (p === 'vote') up.candidates = computeCandidates();
+  if (p !== 'award') up.revealed = sess.phase === 'award' && back ? [] : (sess.revealed || []);
+  FN.session(code).update(up).catch(fail);
+}
+
+function bar(label, sub, pct){
+  return '<div class="bar"><div class="lab">' + label + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div><div class="track"><div class="fill' + (pct < 50 ? ' low' : '') + '" style="width:' + pct + '%"></div></div><div class="pct">' + pct + '%</div></div>';
+}
+function newsCard(a, tag, meta){
+  var card = NEWS.cards.filter(function(c){ return c.id === a.card; })[0];
+  return '<div class="news"><span class="tag">' + esc(tag) + '</span><p class="tt">' + esc(a.title) + '</p><p class="bd">' + esc(a.body) + '</p>' +
+    '<p class="meta">' + (card ? '사용한 자료: ' + esc(card.data) : '') + (meta ? ' · ' + meta : '') + '</p></div>';
+}
+
+var drawT = null;
+function draw(){ clearTimeout(drawT); drawT = setTimeout(drawNow, 60); }
+function drawNow(){
+  if (!sess) return;
+  var all = list(), ph = sess.phase;
+  var h = '<div class="top"><div class="t">' + esc(sess.label) + '<span>코드 ' + esc(code) + '</span></div><div class="steps">' +
+    NEWS.phases.map(function(p, i){
+      var idx = NEWS.phases.map(function(x){ return x.id; }).indexOf(ph);
+      return '<button class="step' + (p.id===ph?' on':(i<idx?' done':'')) + '" data-ph="' + p.id + '">' + (i+1) + '. ' + esc(p.name) + '</button>';
+    }).join('') + '</div><div class="row"><button class="btn line sm" id="review">기사 검토</button><button class="btn line sm" id="csv">결과 내려받기</button><button class="btn line sm" id="homeBtn">처음으로</button></div></div>';
+  h += '<div class="grid"><div class="qr" id="qrBox">' + qrSvg(6) + '<p class="code">수업 코드<b>' + esc(code) + '</b></p><p class="url">' + esc(studentUrl()) + '</p>' +
+    '<button class="btn sm" id="qrBig">QR 크게 보기</button><p class="muted" style="font-size:17px;margin:12px 0 0">참여 <b>' + all.length + '</b>명' + groupCount() + '</p></div><div>';
+
+  if (ph === 'quiz') h += quizView(all);
+  else if (ph === 'write') h += writeView(all);
+  else if (ph === 'read') h += readView(all);
+  else if (ph === 'vote') h += voteView(all);
+  else h += awardView();
+  h += '</div></div>';
+  $app.innerHTML = h;
+
+  Array.prototype.forEach.call($app.querySelectorAll('[data-ph]'), function(b){ b.onclick = function(){ setPhase(b.getAttribute('data-ph')); }; });
+  document.getElementById('homeBtn').onclick = home;
+  document.getElementById('qrBig').onclick = showQr;
+  document.getElementById('review').onclick = review;
+  document.getElementById('csv').onclick = exportCsv;
+  var at = document.getElementById('ansT'); if (at) at.onclick = function(){ showAns = !showAns; drawNow(); };
+  var nx = document.getElementById('nextPh'); if (nx) nx.onclick = function(){ setPhase(nx.getAttribute('data-to')); };
+  var rc = document.getElementById('recand'); if (rc) rc.onclick = function(){ FN.session(code).update({ candidates:computeCandidates() }).catch(fail); };
+  Array.prototype.forEach.call($app.querySelectorAll('[data-reveal]'), function(b){ b.onclick = function(){ reveal(b.getAttribute('data-reveal')); }; });
+  var rr = document.getElementById('resetRev'); if (rr) rr.onclick = function(){ if (confirm('시상 결과 공개를 처음부터 다시 할까요?')) FN.session(code).update({ revealed:[] }).catch(fail); };
+}
+function groupCount(){
+  var g = GROUPS.filter(function(x){ return x.id === sess.groupId; })[0];
+  return g ? ' / ' + g.names.length + '명' : '';
+}
+function nextBtn(to, label){ return '<button class="btn hot" id="nextPh" data-to="' + to + '">' + label + ' →</button>'; }
+function stat(label, val, sub){ return '<div class="stat"><p>' + label + '</p><p class="big">' + val + (sub ? '<small> ' + sub + '</small>' : '') + '</p></div>'; }
+
+function quizView(all){
+  var d1 = all.filter(function(s){ return s.q1; }), d2 = all.filter(function(s){ return s.q2; });
+  var avg1 = d1.length ? (d1.reduce(function(a,s){ return a + s.q1.score; }, 0) / d1.length).toFixed(1) : '-';
+  var avg2 = d2.length ? (d2.reduce(function(a,s){ return a + s.q2.score; }, 0) / d2.length).toFixed(1) : '-';
+  var h = '<div class="stats">' + stat('활동 1 제출', d1.length, '명') + stat('활동 1 평균', avg1, '/ 6') + stat('활동 2 제출', d2.length, '명') + stat('활동 2 평균', avg2, '/ 5') + '</div>';
+  h += '<div class="panel"><div class="row" style="justify-content:space-between;margin:0 0 12px"><h2 style="margin:0">활동 1 기사별 정답률</h2><button class="btn line sm" id="ansT">' + (showAns ? '정답 숨기기' : '정답 보기') + '</button></div><div class="bars">' + NEWS.q1.map(function(q){
+    var ok = d1.filter(function(s){ return s.q1.ans[q.key] === q.answer; }).length;
+    var tr = NEWS.tricks.filter(function(t){ return t.id === q.answer; })[0];
+    return bar('기사 ' + q.key, showAns ? tr.mark + '. ' + tr.label : '', d1.length ? Math.round(ok / d1.length * 100) : 0);
+  }).join('') + '</div></div>';
+  h += '<div class="panel"><h2>활동 2 제목별 정답률</h2><div class="bars">' + NEWS.q2.items.map(function(it, i){
+    var ok = d2.filter(function(s){ return s.q2.ans[i] === it.ok; }).length;
+    return bar(it.no + (showAns ? ' ' + (it.ok ? 'O' : 'X') : ''), it.text, d2.length ? Math.round(ok / d2.length * 100) : 0);
+  }).join('') + '</div></div>';
+  h += '<div class="row" style="justify-content:flex-end">' + nextBtn('write', '기사 쓰기 시작') + '</div>';
+  return h;
+}
+
+function writeView(all){
+  var done = all.filter(function(s){ return s.article; });
+  var yet = all.filter(function(s){ return !s.article; });
+  var pct = all.length ? Math.round(done.length / all.length * 100) : 0;
+  var h = '<div class="panel"><h2>활동 3. 어그로 기사 쓰는 중</h2><p class="big">' + done.length + '<small> / ' + all.length + '명 제출</small></p><div class="prog"><div style="width:' + pct + '%"></div></div>' +
+    '<p class="muted" style="margin:0">규칙: 숫자는 지어내지 말고, 보여 주는 방식으로만 부풀리기 · 속임수 2개 이상 · 실존 인물과 우리 학교 사람은 소재 금지</p></div>';
+  h += '<div class="panel"><h2>자료 카드</h2>' + NEWS.cards.map(function(c){ return '<p style="margin:4px 0"><b>' + c.id + '. ' + esc(c.name) + '</b> ' + esc(c.data) + '</p>'; }).join('') + '</div>';
+  if (yet.length) h += '<div class="panel"><h2>아직 안 낸 학생</h2><div class="names">' + yet.map(function(s){ return '<span class="name">' + esc(s.name) + '</span>'; }).join('') + '</div></div>';
+  h += '<div class="row" style="justify-content:flex-end">' + nextBtn('read', '돌려 읽기 시작') + '</div>';
+  return h;
+}
+
+function readView(all){
+  var order = sess.readOrder || [], expected = 0, finished = 0, got = {};
+  ratings.forEach(function(r){ (got[r.reader] = got[r.reader] || {})[r.target] = 1; });
+  all.forEach(function(s){
+    var t = U.readTargets(code, s.sid, order, NEWS.READ_COUNT);
+    expected += t.length;
+    if (t.length && t.every(function(x){ return got[s.sid] && got[s.sid][x]; })) finished++;
+  });
+  var pct = expected ? Math.min(100, Math.round(ratings.length / expected * 100)) : 0;
+  var h = '<div class="panel"><h2>돌려 읽기</h2><p class="muted" style="margin:0 0 10px">학생마다 친구 기사 ' + NEWS.READ_COUNT + '개를 읽고 별점을 줍니다. 기사 ' + order.length + '개가 돌고 있어요.</p>' +
+    '<p class="big">' + finished + '<small> / ' + all.length + '명 다 읽음</small></p><div class="prog"><div style="width:' + pct + '%"></div></div><p class="muted" style="margin:0">별점 ' + ratings.length + ' / ' + expected + '개</p></div>';
+  h += '<div class="row" style="justify-content:flex-end">' + nextBtn('vote', '후보 뽑고 투표 시작') + '</div>';
+  return h;
+}
+
+function voteView(all){
+  var cands = sess.candidates || [], st = ratingStats();
+  var h = '<div class="panel"><div class="row" style="justify-content:space-between"><h2 style="margin:0">투표 중 · ' + votes.length + ' / ' + all.length + '명 참여</h2><button class="btn line sm" id="recand">후보 다시 뽑기</button></div>' +
+    '<p class="muted" style="margin:8px 0 0">' + NEWS.awards.map(function(a){ return '<b>' + esc(a.name) + '</b> ' + esc(a.desc); }).join(' · ') + '</p></div>';
+  h += '<div class="cands">' + cands.map(function(id, i){
+    var s = students[id]; if (!s || !s.article) return '';
+    var x = st[id];
+    return newsCard(s.article, '후보 ' + (i+1), x ? '별점 평균 ' + x.avg.toFixed(1) + ' (' + x.n + '명)' : '');
+  }).join('') + '</div>';
+  h += '<div class="row" style="justify-content:flex-end">' + nextBtn('award', '시상식 시작') + '</div>';
+  return h;
+}
+
+function awardView(){
+  var rev = sess.revealed || [];
+  var h = '<div class="panel" style="text-align:center"><p class="big" style="font-size:56px">🏆 시상식</p><p class="muted" style="margin:6px 0 0">투표 ' + votes.length + '명 · 한 사람이 두 상을 받지 않아요</p></div>';
+  NEWS.awards.forEach(function(aw){
+    var r = rev.filter(function(x){ return x.award === aw.id; })[0];
+    h += '<div class="award"><div class="n">' + esc(aw.name) + '</div><div class="d">' + esc(aw.desc) + '</div>';
+    if (r){
+      var s = students[r.sid] || {};
+      h += (s.article ? newsCard(s.article, aw.name, r.votes + '표') : '') + '<p class="winner">' + esc(s.name || '') + '<small>' + esc(r.sid) + '</small></p>';
+    } else {
+      h += '<button class="btn hot" data-reveal="' + aw.id + '">공개하기</button>';
+    }
+    h += '</div>';
+  });
+  if (rev.length === NEWS.awards.length) {
+    h += '<div class="panel"><h2>마무리 질문</h2><p style="margin:0;font-size:24px">상을 받은 기사는 무엇이 클릭을 끌었나요? 실제 언론과 SNS에서도 이런 기사가 계속 만들어지는 이유를 \'클릭 수\'와 \'돈\'의 관계로 설명해 보세요.</p>' +
+      '<p class="muted" style="margin:8px 0 0">학생들은 자기 기기에 답을 씁니다. 제출 ' + list().filter(function(s){ return s.reflect; }).length + '명</p></div>';
+  }
+  if (rev.length) h += '<div class="row" style="justify-content:flex-end"><button class="btn line sm" id="resetRev">공개 다시 하기</button></div>';
+  return h;
+}
+
+function reveal(awardId){
+  var w = pickWinner(awardId);
+  if (!w) return alert('후보가 없어요.');
+  var s = students[w.sid] || {};
+  var rev = (sess.revealed || []).concat([{ award:awardId, sid:w.sid, votes:w.votes, title:(s.article||{}).title || '' }]);
+  FN.session(code).update({ revealed:rev }).then(confetti).catch(fail);
+}
+function confetti(){
+  var box = document.createElement('div'); box.className = 'confetti';
+  var colors = ['#d9572b','#f2a51a','#1f6f5c','#3a7bd5','#e84a8b'];
+  for (var i = 0; i < 90; i++){
+    var c = document.createElement('i');
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[i % colors.length];
+    c.style.animationDelay = (Math.random() * 0.8) + 's';
+    c.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+    box.appendChild(c);
+  }
+  document.body.appendChild(box);
+  setTimeout(function(){ box.remove(); }, 4200);
+}
+
+function showQr(){
+  var f = document.getElementById('qrfull');
+  f.innerHTML = qrSvg(10) + '<div class="code">수업 코드 <b>' + esc(code) + '</b></div><div class="muted">화면을 누르면 닫혀요</div>';
+  f.classList.add('show');
+  f.onclick = function(){ f.classList.remove('show'); };
+}
+
+/* 기사 검토: 부적절한 기사를 숨기기 (전자칠판에 띄우기 전에 확인) */
+function review(){
+  var m = document.getElementById('modal'), box = document.getElementById('modalBox');
+  function paint(){
+    var arr = list().filter(function(s){ return s.article; });
+    box.innerHTML = '<div class="row" style="justify-content:space-between;margin:0 0 14px"><h2 style="margin:0">기사 검토 (' + arr.length + '개)</h2><button class="btn sm" id="mClose">닫기</button></div>' +
+      '<p class="muted" style="margin:0 0 12px">숨긴 기사는 돌려 읽기와 후보에서 빠지고, 학생에게 고쳐서 다시 내라는 안내가 뜹니다.</p>' +
+      (arr.length ? arr.map(function(s){
+        return '<div class="rev' + (s.hiddenByTeacher ? ' hid' : '') + '"><div class="c"><b style="font-size:20px">' + esc(s.article.title) + '</b><p style="margin:4px 0;font-size:17px;white-space:pre-wrap">' + esc(s.article.body) + '</p>' +
+          '<p class="muted" style="margin:0;font-size:15px">' + esc(s.sid) + ' ' + esc(s.name) + ' · ' + s.article.tricks.map(U.trickLabel).map(esc).join(', ') + '</p></div>' +
+          '<button class="btn sm ' + (s.hiddenByTeacher ? '' : 'line') + '" data-hide="' + esc(s.sid) + '">' + (s.hiddenByTeacher ? '다시 보이기' : '숨기기') + '</button></div>';
+      }).join('') : '<p class="muted">아직 제출된 기사가 없어요.</p>');
+    document.getElementById('mClose').onclick = function(){ m.classList.remove('show'); };
+    Array.prototype.forEach.call(box.querySelectorAll('[data-hide]'), function(b){
+      b.onclick = function(){
+        var sid = b.getAttribute('data-hide'), s = students[sid];
+        var hide = !s.hiddenByTeacher;
+        FN.students(code).doc(sid).update({ hiddenByTeacher:hide }).then(function(){
+          s.hiddenByTeacher = hide;
+          // 이미 돌고 있는 순서·후보에서도 빼기
+          var up = {};
+          if (hide && (sess.readOrder||[]).indexOf(sid) >= 0) up.readOrder = sess.readOrder.filter(function(x){ return x !== sid; });
+          if (hide && (sess.candidates||[]).indexOf(sid) >= 0) up.candidates = sess.candidates.filter(function(x){ return x !== sid; });
+          if (Object.keys(up).length) FN.session(code).update(up);
+          paint();
+        }).catch(fail);
+      };
+    });
+  }
+  paint(); m.classList.add('show');
+}
+
+/* 결과 내려받기 (엑셀에서 열리는 CSV) */
+function exportCsv(){
+  var st = ratingStats();
+  var head = ['학번','이름','활동1 점수','활동2 점수','고쳐 쓴 제목','자료 카드','기사 제목','기사 본문','쓴 속임수','받은 별점 평균','받은 별점 수','수상','마무리 질문 답'];
+  var rows = list().sort(function(a,b){ return a.sid < b.sid ? -1 : 1; }).map(function(s){
+    var a = s.article || {}, x = st[s.sid];
+    var won = (sess.revealed||[]).filter(function(r){ return r.sid === s.sid; }).map(function(r){
+      return (NEWS.awards.filter(function(w){ return w.id === r.award; })[0] || {}).name;
+    }).join(' ');
+    return [s.sid, s.name, s.q1 ? s.q1.score : '', s.q2 ? s.q2.score : '', s.q2fix || '', a.card || '', a.title || '', a.body || '',
+      (a.tricks || []).map(U.trickLabel).join(', '), x ? x.avg.toFixed(2) : '', x ? x.n : '', won, s.reflect || ''];
+  });
+  var csv = '﻿' + [head].concat(rows).map(function(r){
+    return r.map(function(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',');
+  }).join('\r\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+  a.download = '어그로뉴스_' + sess.label + '_' + sess.day + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+})();
+</script>
+</body>
+</html>

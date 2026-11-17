@@ -151,7 +151,7 @@ function start(){
 }
 
 function pickSession(msg){
-  $app.innerHTML = '<h2>수업 고르기</h2><p class="lead">오늘 열린 수업 중에서 내 수업을 고르세요.</p>' +
+  $app.innerHTML = '<h2>수업 고르기</h2><p class="lead">최근 열린 수업 중에서 내 수업을 고르세요.</p>' +
     (msg ? '<div class="notice">' + esc(msg) + '</div>' : '') +
     '<div id="list"><p class="small">불러오는 중…</p></div>' +
     '<div class="box"><h3>수업 코드로 들어가기</h3><input class="in" id="codeIn" inputmode="numeric" maxlength="4" placeholder="칠판에 보이는 4자리 코드">' +
@@ -161,13 +161,13 @@ function pickSession(msg){
     if (!/^\d{4}$/.test(c)) return toast('4자리 숫자를 입력하세요');
     go(c);
   };
-  FN.db.collection('fakeNews').where('day', '==', U.today()).get().then(function(snap){
+  FN.db.collection('fakeNews').where('day', '>=', U.daysAgo(14)).get().then(function(snap){
     var arr = [];
     snap.forEach(function(d){ arr.push(d.data()); });
     arr.sort(function(a,b){ return (b.createdMs||0) - (a.createdMs||0); });
     document.getElementById('list').innerHTML = arr.length ? arr.map(function(s){
-      return '<button class="sess" data-code="' + esc(s.code) + '">' + esc(s.label) + '<span>코드 ' + esc(s.code) + '</span></button>';
-    }).join('') : '<p class="small">오늘 열린 수업이 없어요. 칠판의 QR코드나 코드를 이용하세요.</p>';
+      return '<button class="sess" data-code="' + esc(s.code) + '">' + esc(s.label) + '<span>' + esc(U.dayLabel(s.day)) + ' · 코드 ' + esc(s.code) + '</span></button>';
+    }).join('') : '<p class="small">최근 열린 수업이 없어요. 칠판의 QR코드나 코드를 이용하세요.</p>';
     Array.prototype.forEach.call(document.querySelectorAll('.sess'), function(b){
       b.onclick = function(){ go(b.getAttribute('data-code')); };
     });
@@ -206,6 +206,8 @@ function enter(){
     localStorage.removeItem('fn:' + code); location.reload();
   };
   var first = true;
+  // 이어서 하는 수업: 이미 활동 3 단계면 바로 활동 3 화면으로
+  if (['write','read','vote','award'].indexOf(sess.phase) >= 0) tab = 'q3';
   FN.students(code).doc(me.sid).onSnapshot(function(d){
     myDoc = d.data() || {};
     if (myDoc.hiddenByTeacher && !first) render();

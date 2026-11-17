@@ -151,7 +151,7 @@ function home(){
     GROUPS.map(function(g){ return '<option value="' + esc(g.id) + '">' + esc(g.label) + ' (' + g.names.length + '명)</option>'; }).join('') +
     '<option value="">직접 입력</option></select><input class="in" id="memo" placeholder="직접 입력할 때 수업 이름" style="display:none">' +
     '<button class="btn hot" id="newGo">수업 열기</button></div></div>' +
-    '<div class="panel"><h2>오늘 연 수업</h2><div id="today"><p class="muted">불러오는 중…</p></div>' +
+    '<div class="panel"><h2>최근 2주 수업 (이어서 하기)</h2><div id="today"><p class="muted">불러오는 중…</p></div>' +
     '<div class="row" style="margin-top:10px"><input class="in" id="codeIn" placeholder="지난 수업 코드 4자리"><button class="btn line" id="codeGo">코드로 열기</button></div></div>';
   var grp = document.getElementById('grp'), memo = document.getElementById('memo');
   grp.onchange = function(){ memo.style.display = grp.value ? 'none' : ''; };
@@ -161,11 +161,11 @@ function home(){
     var c = document.getElementById('codeIn').value.trim();
     if (/^\d{4}$/.test(c)) openSession(c);
   };
-  FN.db.collection('fakeNews').where('day','==',U.today()).get().then(function(snap){
+  FN.db.collection('fakeNews').where('day','>=',U.daysAgo(14)).get().then(function(snap){
     var arr = []; snap.forEach(function(d){ arr.push(d.data()); });
     arr.sort(function(a,b){ return (b.createdMs||0) - (a.createdMs||0); });
     document.getElementById('today').innerHTML = arr.length ? arr.map(function(s){
-      return '<button class="sess" data-code="' + esc(s.code) + '">' + esc(s.label) + '<span>코드 ' + esc(s.code) + ' · ' + esc(phaseName(s.phase)) + '</span></button>';
+      return '<button class="sess" data-code="' + esc(s.code) + '">' + esc(s.label) + '<span>' + esc(U.dayLabel(s.day)) + ' · 코드 ' + esc(s.code) + ' · ' + esc(phaseName(s.phase)) + '</span></button>';
     }).join('') : '<p class="muted">아직 없어요.</p>';
     Array.prototype.forEach.call(document.querySelectorAll('.sess'), function(b){ b.onclick = function(){ openSession(b.getAttribute('data-code')); }; });
   }).catch(fail);

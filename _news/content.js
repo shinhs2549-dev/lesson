@@ -126,6 +126,17 @@ window.NEWSUTIL = {
     var d = new Date();
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   },
+  // n일 전 날짜 (최근 수업 목록용)
+  daysAgo: function (n) {
+    var d = new Date(Date.now() - n * 86400000);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  },
+  dayLabel: function (day) {
+    if (!day) return '';
+    if (day === NEWSUTIL.today()) return '오늘';
+    var p = day.split('-');
+    return (+p[1]) + '월 ' + (+p[2]) + '일';
+  },
   // 문자열 → 고정된 숫자 (돌려 읽기 순서를 섞을 때 사용)
   hash: function (s) {
     var h = 2166136261;

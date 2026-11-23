@@ -160,6 +160,11 @@ button:disabled{cursor:default}
 .mchip{border:1.5px solid var(--line);background:var(--chip);border-radius:999px;padding:6px 13px;font-weight:600;font-size:.9rem}
 .mchip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .mchip.rnd{border-style:dashed}
+.mchip small{opacity:.6;font-weight:500;margin-left:2px}
+.startbtn{align-self:flex-start;font-size:1.1rem;padding:12px 22px}
+.startbtn small{font-weight:500;opacity:.85;margin-left:4px}
+.startbtn.confirm{background:var(--ng)}
+.mapempty{padding:80px 20px;text-align:center;color:var(--muted);line-height:1.8;font-size:1.05rem}
 .mbody2{display:flex;gap:18px;align-items:flex-start}
 .mapcol{flex:1 1 auto;min-width:0;position:sticky;top:8px}
 .mapbar{display:flex;align-items:center;gap:6px;margin-bottom:6px}
@@ -168,11 +173,10 @@ button:disabled{cursor:default}
 .mapbox{overflow:auto;max-height:calc(100vh - 140px);border:1.5px solid var(--line);border-radius:10px;background:#fff}
 .mapinner{position:relative;line-height:0}
 .mapinner img{width:100%;height:auto;display:block;user-select:none;-webkit-user-drag:none}
-.dot{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#e0301e;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #e0301e}
+.dot{position:absolute;width:calc(14px * var(--k,1));height:calc(14px * var(--k,1));transform:translate(-50%,-50%);border-radius:50%;background:#e0301e;border:calc(2.5px * var(--k,1)) solid #fff;box-shadow:0 0 0 1.5px #e0301e}
 .dot.ok{background:#1f8a4c;box-shadow:0 0 0 1.5px #1f8a4c}
 .dot.ng{background:#e0301e}
-.dlab{position:absolute;transform:translate(9px,-50%);line-height:1;font-weight:800;font-size:15px;color:#e0301e;background:#fff;border:1.5px solid #e0301e;border-radius:6px;padding:2px 5px;font-family:var(--f-body)}
-.dlab.l{transform:translate(calc(-100% - 9px),-50%)}
+.dlab{position:absolute;transform:translate(-50%,-50%);min-width:calc(22px * var(--k,1));text-align:center;line-height:1;font-weight:800;font-size:calc(15px * var(--k,1));color:#e0301e;background:#fff;border:1.5px solid #e0301e;border-radius:6px;padding:calc(3px * var(--k,1)) calc(4px * var(--k,1));font-family:var(--f-body);pointer-events:none}
 .anscol{flex:0 0 400px;display:flex;flex-direction:column;gap:10px}
 .arow{display:flex;gap:10px;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--panel)}
 .arow.allok{border-color:var(--ok);background:color-mix(in srgb,var(--ok-soft) 55%,var(--panel))}
@@ -243,8 +247,9 @@ button:disabled{cursor:default}
   <div class="wrap">
     <div class="mhead">
       <h1>백지도 실전 문제</h1>
-      <p class="hint">지도의 점 A~D가 어느 도시(지역)인지, 어떤 기후인지 직접 써 보세요. 기후는 기호(Cfa)나 이름(온난 습윤) 모두 됩니다.</p>
+      <p class="hint">지도를 고르고 테스트를 시작하면 점 10개가 무작위로 찍혀요. 각 점이 어느 도시(지역)인지, 어떤 기후인지 직접 써 보세요. 기후는 기호(Cfa)나 이름(온난 습윤) 모두 됩니다.</p>
       <div class="mchips" id="mapChips"></div>
+      <button type="button" class="btn startbtn" id="mapStart"></button>
     </div>
     <div class="mbody2">
       <div class="mapcol">
@@ -259,7 +264,7 @@ button:disabled{cursor:default}
           <span class="warnmsg" id="mapWarn" hidden></span>
           <span class="sp"></span>
           <button type="button" class="btn" id="mapSubmit">제출하고 채점</button>
-          <button type="button" class="btn" id="mapNext" hidden>새 문제 (같은 지도)</button>
+          <button type="button" class="btn" id="mapNext" hidden>새 테스트 시작</button>
         </div>
       </div>
     </div>
@@ -816,8 +821,8 @@ const MAPS = [{"id": "world", "name": "세계", "w": 595, "h": 367, "img": "data
 /* ================= 백지도 실전 문제 ================= */
 (function(){
   const $ = id => document.getElementById(id);
-  const LABELS = ['A','B','C','D'];
-  const NPTS = 4;
+  const LABELS = ['A','B','C','D','E','F','G','H','I','J'];
+  const NPTS = 10;
   const MKEY = 'climateMap:v1';
   const GRAPH_OF = {};                         // 도시 → 기후 그래프 번호
   KEY.forEach((k,i)=>{ GRAPH_OF[k.city.replace(/\(.*\)/,'')] = i; });
@@ -867,44 +872,73 @@ const MAPS = [{"id": "world", "name": "세계", "w": 595, "h": 367, "img": "data
   }
 
   /* ---------- 상태 ---------- */
-  let M = { map:null, pts:[], city:{}, clim:{}, graded:false };
+  let M = { sel:'random', map:null, pts:[], city:{}, clim:{}, graded:false };
   try { const s = JSON.parse(localStorage.getItem(MKEY)); if(s && s.map) M = Object.assign(M, s); } catch(e){}
   const saveM = () => { try { localStorage.setItem(MKEY, JSON.stringify(M)); } catch(e){} };
   const mapById = id => MAPS.find(m=>m.id===id);
 
   function pickPoints(m){
-    const minD = m.id==='world' ? 0.045 : 0.06;
     const pool = m.pts.filter(p=>PLACES[p[0]]).sort(()=>Math.random()-0.5);
     const chosen=[], usedK=new Set();
-    const far = p => chosen.every(q=>{ const dx=(p[1]-q[1]), dy=(p[2]-q[2])*m.h/m.w; return Math.hypot(dx,dy)>=minD; });
-    for(const p of pool){ if(chosen.length>=NPTS) break; if(!usedK.has(PLACES[p[0]].k) && far(p)){ chosen.push(p); usedK.add(PLACES[p[0]].k); } }
-    for(const p of pool){ if(chosen.length>=NPTS) break; if(!chosen.includes(p) && far(p)) chosen.push(p); }
+    // 점끼리 너무 붙지 않게, 기후는 되도록 골고루 (모자라면 간격 조건을 조금씩 완화)
+    for(const minD of (m.id==='world' ? [0.05,0.04,0.03] : [0.06,0.045,0.035])){
+      const far = p => chosen.every(q=>{ const dx=(p[1]-q[1]), dy=(p[2]-q[2])*m.h/m.w; return Math.hypot(dx,dy)>=minD; });
+      for(const p of pool){ if(chosen.length>=NPTS) break; if(!chosen.includes(p) && !usedK.has(PLACES[p[0]].k) && far(p)){ chosen.push(p); usedK.add(PLACES[p[0]].k); } }
+      for(const p of pool){ if(chosen.length>=NPTS) break; if(!chosen.includes(p) && far(p)) chosen.push(p); }
+      if(chosen.length>=NPTS) break;
+    }
     return chosen.map(p=>p[0]);
   }
-  function newRound(mapId){
-    if(mapId==='random'){ const c = MAPS.filter(m=>m.id!==M.map); mapId = c[Math.floor(Math.random()*c.length)].id; }
+  function newRound(){
+    let mapId = M.sel;
+    if(mapId==='random'){ const c = MAPS.filter(m=>m.id!==M.map && m.pts.length>=8); mapId = c[Math.floor(Math.random()*c.length)].id; }
     const m = mapById(mapId);
-    M = { map:m.id, pts:pickPoints(m), city:{}, clim:{}, graded:false };
+    M = { sel:M.sel, map:m.id, pts:pickPoints(m), city:{}, clim:{}, graded:false };
     saveM(); zoom=1; drawMapApp();
+    $('mapApp').scrollIntoView({block:'start'});
   }
 
   /* ---------- 화면 ---------- */
   let zoom = 1;
   function drawChips(){
     const host=$('mapChips');
-    host.innerHTML = MAPS.map(m=>`<button type="button" class="mchip" data-map="${m.id}" aria-pressed="${m.id===M.map}">${m.name}</button>`).join('')
-      + `<button type="button" class="mchip rnd" data-map="random">🎲 무작위</button>`;
+    host.innerHTML = MAPS.map(m=>`<button type="button" class="mchip" data-map="${m.id}" aria-pressed="${m.id===M.sel}">${m.name} <small>${Math.min(NPTS,m.pts.length)}</small></button>`).join('')
+      +`<button type="button" class="mchip rnd" data-map="random" aria-pressed="${M.sel==='random'}">🎲 무작위 지도</button>`;
+    const sel = M.sel==='random' ? '무작위 지도' : mapById(M.sel).name+' 지도';
+    const avail = M.sel==='random' ? NPTS : Math.min(NPTS, mapById(M.sel).pts.length);
+    $('mapStart').innerHTML = `▶ ${sel}로 테스트 시작! <small>(${avail}문제)</small>`;
   }
   function drawMap(){
-    const m = mapById(M.map), box=$('mapBox');
+    const box=$('mapBox');
+    if(!M.map){ box.innerHTML='<div class="mapempty">위에서 지도를 고르고 <b>테스트 시작!</b>을 누르세요.<br>점 10개가 무작위로 찍혀요.</div>'; return; }
+    const m = mapById(M.map);
     const pts = M.pts.map((n,i)=>{ const p=m.pts.find(q=>q[0]===n); return {n,i,x:p[1]*100,y:p[2]*100}; });
-    box.innerHTML = `<div class="mapinner" style="width:${zoom*100}%"><img src="${m.img}" alt="${m.name} 백지도" draggable="false">`
+    // 글자표(A~J)가 다른 점·글자표와 겹치지 않는 자리 찾기
+    const W = Math.max(200, (box.clientWidth||600)*zoom), H = W*m.h/m.w;
+    const k = Math.max(0.6, Math.min(1, W/720)), LW=26*k, LH=24*k, R=9*k;   // 작은 화면에선 점·글자표도 작게
+    const rects = pts.map(p=>({x:p.x/100*W-R, y:p.y/100*H-R, w:2*R, h:2*R}));
+    const hit = (a,b)=> a.x<b.x+b.w && b.x<a.x+a.w && a.y<b.y+b.h && b.y<a.y+a.h;
+    const OFF=[[18,0],[-18,0],[0,-20],[0,20],[17,-17],[17,17],[-17,-17],[-17,17],[30,0],[-30,0],[0,-32],[0,32]].map(([a,b])=>[a*k,b*k]);
+    const placed=[];
+    pts.forEach(p=>{
+      const cx=p.x/100*W, cy=p.y/100*H; let best=null;
+      for(const [dx,dy] of OFF){
+        const r={x:cx+dx-LW/2, y:cy+dy-LH/2, w:LW, h:LH};
+        if(r.x<2||r.y<2||r.x+r.w>W-2||r.y+r.h>H-2) continue;
+        if(rects.some(q=>hit(r,q)) || placed.some(q=>hit(r,q))) continue;
+        best={dx,dy,r}; break;
+      }
+      if(!best){ const dx=(cx>W-40?-18:18)*k; best={dx,dy:0,r:{x:cx+dx-LW/2,y:cy-LH/2,w:LW,h:LH}}; }
+      placed.push(best.r); p.dx=best.dx; p.dy=best.dy;
+    });
+    box.innerHTML = `<div class="mapinner" style="width:${zoom*100}%;--k:${k.toFixed(3)}"><img src="${m.img}" alt="${m.name} 백지도" draggable="false">`
       + pts.map(p=>{
           let cls='dot';
           if(M.graded){ const ok=cityOk(p.n,M.city[p.n])&&climOk(p.n,M.clim[p.n]); cls+= ok?' ok':' ng'; }
-          const right = p.x>85;
-          return `<span class="${cls}" style="left:${p.x}%;top:${p.y}%"></span><span class="dlab${right?' l':''}" style="left:${p.x}%;top:${p.y}%">${LABELS[p.i]}</span>`;
-        }).join('') + '</div>';
+          return `<span class="${cls}" style="left:${p.x}%;top:${p.y}%"></span>`;
+        }).join('')
+      + pts.map(p=>`<span class="dlab" style="left:calc(${p.x}% + ${p.dx}px);top:calc(${p.y}% + ${p.dy}px)">${LABELS[p.i]}</span>`).join('')
+      + '</div>';
     $('zoomLv').textContent = Math.round(zoom*100)+'%';
   }
   function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -914,7 +948,9 @@ const MAPS = [{"id": "world", "name": "세계", "w": 595, "h": 367, "img": "data
     return [...names].slice(0,6);
   }
   function drawAnswers(){
-    const host=$('mapAns'); const m=mapById(M.map);
+    const host=$('mapAns');
+    if(!M.map){ host.innerHTML=''; $('mapScore').innerHTML=''; $('mapSubmit').hidden=true; $('mapNext').hidden=true; $('mapWarn').hidden=true; $('mapTitle').textContent='테스트 전'; return; }
+    const m=mapById(M.map);
     host.innerHTML = M.pts.map((n,i)=>{
       const p=PLACES[n], L=LABELS[i];
       const cv=M.city[n]||'', kv=M.clim[n]||'';
@@ -956,7 +992,16 @@ const MAPS = [{"id": "world", "name": "세계", "w": 595, "h": 367, "img": "data
   function drawMapApp(){ drawChips(); drawMap(); drawAnswers(); }
 
   /* ---------- 이벤트 ---------- */
-  $('mapChips').addEventListener('click', e=>{ const b=e.target.closest('.mchip'); if(b) newRound(b.dataset.map); });
+  // 지도 칩은 '고르기'만 하고, 문제는 테스트 시작을 눌러야 바뀜
+  $('mapChips').addEventListener('click', e=>{ const b=e.target.closest('.mchip'); if(!b) return; M.sel=b.dataset.map; saveM(); drawChips(); });
+  $('mapStart').addEventListener('click', ()=>{
+    const busy = M.map && !M.graded && M.pts.some(n=>(M.city[n]||'').trim()||(M.clim[n]||'').trim());
+    if(busy && !$('mapStart').classList.contains('confirm')){
+      $('mapStart').classList.add('confirm'); $('mapStart').innerHTML='지금 푼 답이 지워져요. 한 번 더 누르면 새로 시작';
+      setTimeout(()=>{ $('mapStart').classList.remove('confirm'); drawChips(); }, 3500); return;
+    }
+    $('mapStart').classList.remove('confirm'); newRound();
+  });
   $('mapAns').addEventListener('input', e=>{
     const t=e.target; if(!t.dataset || !t.dataset.n) return;
     (t.dataset.f==='city'?M.city:M.clim)[t.dataset.n]=t.value; saveM();
@@ -981,11 +1026,12 @@ const MAPS = [{"id": "world", "name": "세계", "w": 595, "h": 367, "img": "data
     }
     gradeMap();
   });
-  $('mapNext').addEventListener('click', ()=>newRound(M.map));
+  $('mapNext').addEventListener('click', ()=>newRound());
+  let rzT; window.addEventListener('resize', ()=>{ clearTimeout(rzT); rzT=setTimeout(()=>{ if(!$('mapApp').hidden) drawMap(); },150); });
   $('zoomIn').addEventListener('click', ()=>{ zoom=Math.min(3, +(zoom+0.5).toFixed(1)); drawMap(); });
   $('zoomOut').addEventListener('click', ()=>{ zoom=Math.max(1, +(zoom-0.5).toFixed(1)); drawMap(); });
 
-  window.MapApp = { start(){ if(!M.map || !mapById(M.map) || !M.pts.length) newRound('random'); else drawMapApp(); } };
+  window.MapApp = { start(){ if(M.map && !mapById(M.map)) M.map=null; if(M.sel!=='random' && !mapById(M.sel)) M.sel='random'; drawMapApp(); } };
 })();
 
 /* ---------- 탭 전환: 기후 그래프 / 백지도 ---------- */

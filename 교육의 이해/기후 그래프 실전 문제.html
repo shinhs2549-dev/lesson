@@ -3,18 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>기후 그래프 보조선</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<title>기후 그래프 실전 문제</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=Black+Han+Sans&display=swap">
 <style>
-html,body{margin:0}body{font-size:14px}img{max-width:100%}[hidden]{display:none!important}
-:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-
-/* 레이아웃: 상단 고정 보조선 도구막대 + 원본 학습지처럼 4열 그래프 격자, 그래프를 누르면 크게 보기 */
+html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}
 :root{
   --bg:#f3f6f8; --panel:#ffffff; --ink:#18232c; --muted:#5d6b77; --line:#d5dde3;
   --accent:#1d5f8a; --accent-ink:#ffffff; --chip:#e8eef2;
+  --ok:#1f8a4c; --ok-soft:#e3f4ea; --ng:#cf3a2b; --ng-soft:#fbe7e4; --warn:#b26a00;
   --c-p60:#1565d8; --c-p30:#16a3c4;
   --c-t18:#e07b00; --c-t-3:#8a3fc7; --c-t22:#d6263b; --c-t10:#2f9a3c; --c-t0:#0b7f7a; --c-free:#111111;
   --f-display:"Black Han Sans","IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
@@ -22,36 +19,62 @@ html,body{margin:0}body{font-size:14px}img{max-width:100%}[hidden]{display:none!
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#10171d; --panel:#18222a; --ink:#e4ebf0; --muted:#9aa9b5; --line:#2b3a46;
-  --accent:#6fb4e2; --accent-ink:#0c1419; --chip:#22303a; color-scheme:dark}}
+  --accent:#6fb4e2; --accent-ink:#0c1419; --chip:#22303a;
+  --ok:#4cc27e; --ok-soft:#173326; --ng:#f07264; --ng-soft:#3a1d1a; --warn:#f0a83c; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#10171d; --panel:#18222a; --ink:#e4ebf0; --muted:#9aa9b5; --line:#2b3a46;
-  --accent:#6fb4e2; --accent-ink:#0c1419; --chip:#22303a; color-scheme:dark}
+  --accent:#6fb4e2; --accent-ink:#0c1419; --chip:#22303a;
+  --ok:#4cc27e; --ok-soft:#173326; --ng:#f07264; --ng-soft:#3a1d1a; --warn:#f0a83c; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{background:var(--bg);color:var(--ink)}
-body{font-family:var(--f-body);font-size:15px;line-height:1.5}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
-header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+header.bar{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
 header.bar .wrap{padding-block:12px;display:flex;flex-direction:column;gap:10px}
-.titlerow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
-h1{font-family:var(--f-display);font-weight:400;font-size:1.6rem;margin:0;letter-spacing:.01em;text-wrap:balance}
+.titlerow{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:400;font-size:1.6rem;margin:0;letter-spacing:.01em}
 .hint{color:var(--muted);font-size:.85rem;margin:0}
+.modes{display:inline-flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.modes button{border:0;background:transparent;padding:7px 14px;font-weight:700;font-size:.92rem;color:var(--muted)}
+.modes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .tools{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
 .group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .glabel{font-size:.75rem;font-weight:700;letter-spacing:.06em;color:var(--muted);margin-right:2px}
 button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:default}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--chip);border-radius:999px;padding:5px 12px 5px 9px;font-size:.92rem;font-weight:500;font-variant-numeric:tabular-nums;transition:background .15s,border-color .15s}
 .chip .sw{width:18px;height:0;border-top:3px dashed var(--c);opacity:.45}
 .chip .st{font-size:.7rem;color:var(--muted);font-weight:400}
 .chip[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,var(--panel))}
 .chip[aria-pressed="true"] .sw{opacity:1}
-.chip:focus-visible,.act:focus-visible,.card:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.chip:focus-visible,.act:focus-visible,.card:focus-visible,.key:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .act{border:1.5px solid var(--line);background:transparent;border-radius:8px;padding:5px 11px;font-size:.88rem}
 .act.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.act:disabled{opacity:.45}
+
+/* 실전 문제 상단 막대 */
+.qbar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:10px 12px;border-radius:10px;background:var(--chip)}
+.qbar .prog{font-weight:700;font-variant-numeric:tabular-nums}
+.qbar .prog small{color:var(--muted);font-weight:500;margin-left:6px}
+.qbar .sp{flex:1}
+.btn{border:0;border-radius:10px;padding:9px 18px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn:disabled{opacity:.45}
+.warnmsg{color:var(--warn);font-weight:700;font-size:.92rem}
+
+/* 결과 요약 */
+.summary{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px}
+.score{display:flex;gap:22px;flex-wrap:wrap}
+.score div{font-size:.9rem;color:var(--muted);font-weight:700}
+.score b{display:block;font-family:var(--f-display);font-weight:400;font-size:2.1rem;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums}
+.score b small{font-size:1rem;color:var(--muted)}
+.summary .msg{flex:1;min-width:200px;color:var(--muted)}
+.summary .btns{display:flex;gap:8px;flex-wrap:wrap}
+
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:18px}
 @media (max-width:900px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:620px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
-.card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.card{position:relative;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
 .card .head{display:flex;justify-content:space-between;align-items:center}
 .num{font-family:var(--f-display);font-size:1.15rem;color:var(--accent)}
 .zoom{border:1px solid var(--line);background:transparent;border-radius:6px;padding:2px 8px;font-size:.78rem;color:var(--muted)}
@@ -59,35 +82,98 @@ button{font:inherit;color:inherit;cursor:pointer}
 .drawing .fig{cursor:crosshair}
 .fig img{width:100%;height:auto;display:block;user-select:none;-webkit-user-drag:none}
 .fig svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.answer{border-top:1px dashed var(--line);height:28px}
+.answer{border-top:1px dashed var(--line);min-height:28px;padding-top:4px;font-size:.84rem;line-height:1.35;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 8px;align-items:center}
+.answer b{color:var(--ink)}
+.answer .mk{font-weight:700}
+.answer .mk.ok{color:var(--ok)}.answer .mk.ng{color:var(--ng)}
+.card.filled{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.card.allok{border-color:var(--ok);background:color-mix(in srgb,var(--ok-soft) 60%,var(--panel))}
+.card.someng{border-color:var(--ng)}
+.viewonly .answer{display:none}
+
 /* 크게 보기 */
-.modal{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 12px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(16px,env(safe-area-inset-left,0px));gap:10px}
+.modal{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));gap:10px}
 .modal .mtop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .modal .mnum{font-family:var(--f-display);font-size:1.8rem;color:var(--accent)}
-.modal .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:12px}
+.mbody{flex:1;min-height:0;display:flex;gap:18px;max-width:1400px;width:100%;margin:0 auto}
+.modal .stage{flex:1;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;gap:12px}
 .modal .stage .fig{height:100%;width:auto;aspect-ratio:var(--ar);max-width:calc(100% - 120px);cursor:default}
 .drawing .modal .stage .fig{cursor:crosshair}
 .modal .stage .fig img{height:100%;width:100%}
 .nav{flex:none;width:48px;height:48px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel);font-size:1.4rem;line-height:1}
-@media (max-width:620px){.modal .stage .fig{max-width:calc(100% - 92px)}.nav{width:38px;height:38px}}
-.mtools{max-width:1200px;width:100%;margin:0 auto}
+.mtools{max-width:1400px;width:100%;margin:0 auto}
+
+/* 답안 패널 */
+.qpanel{flex:none;width:370px;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:16px}
+.viewonly .qpanel{display:none}
+.qsec h3{margin:0 0 8px;font-size:.95rem;color:var(--muted);font-weight:700}
+.keys{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.key{min-width:52px;height:50px;padding:0 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--chip);font-size:1.35rem;font-weight:700;font-family:var(--f-body)}
+.key[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.key:disabled:not([aria-pressed="true"]){opacity:.4}
+.keys.sub .key{min-width:46px;height:44px;font-size:1.2rem}
+.tipnote{margin:4px 0 6px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--warn) 12%,var(--panel));font-size:.88rem;line-height:1.55}
+.steplabel{font-size:.78rem;color:var(--muted);margin:2px 0 4px}
+.codeout{margin-top:6px;padding:10px 12px;border-radius:10px;background:var(--chip);display:flex;align-items:baseline;gap:10px;min-height:52px}
+.codeout .code{font-family:var(--f-display);font-size:1.9rem;line-height:1;color:var(--accent)}
+.codeout .kname{font-weight:700;font-size:1.05rem}
+.codeout .ph{color:var(--muted);font-size:.9rem}
+.opts{display:grid;gap:6px}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;padding:10px 14px;border-radius:10px;border:1.5px solid var(--line);background:transparent;font-size:1.02rem}
+.opt .ct{color:var(--muted);font-size:.85rem}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel));font-weight:700}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--ng);background:var(--ng-soft)}
+.qnext{display:flex;gap:8px}
+.qnext .btn{flex:1;padding:12px}
+.verdict{border-radius:10px;padding:12px 14px;line-height:1.55}
+.verdict.ok{background:var(--ok-soft)}.verdict.ng{background:var(--ng-soft)}
+.verdict h4{margin:0 0 4px;font-size:1rem}
+.verdict .row{display:grid;grid-template-columns:36px 1fr;gap:8px;align-items:baseline;margin-top:2px}
+.verdict .lab{font-size:.8rem;color:var(--muted);font-weight:700}
+.explain{font-size:.92rem;line-height:1.65;background:var(--chip);border-radius:10px;padding:12px 14px}
+.explain ol{margin:4px 0 0;padding-left:20px}
+.similar{font-size:.92rem;line-height:1.6}
+.similar b{display:block;font-size:.85rem;color:var(--muted);margin-bottom:2px}
+
+@media (max-width:760px){
+  header.bar{position:static}
+  .modal{overflow:auto;padding-top:10px}
+  .mbody{flex-direction:column;flex:none}
+  .modal .stage{flex:none;height:min(56vh,480px)}
+  .modal .stage .fig{max-width:calc(100% - 92px)}
+  .nav{width:38px;height:38px}
+  .qpanel{width:auto;overflow:visible}
+  .modal .mnum{font-size:1.4rem}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 
-
 <header class="bar">
   <div class="wrap">
     <div class="titlerow">
-      <h1>기후 그래프 보조선</h1>
-      <p class="hint">보조선을 켜면 14개 그래프에 한꺼번에 그어집니다. 그래프를 누르면 크게 볼 수 있어요.</p>
+      <h1>기후 그래프 실전 문제</h1>
+      <div class="modes" role="group" aria-label="모드">
+        <button type="button" data-mode="quiz">문제 풀기</button>
+        <button type="button" data-mode="view">그래프만 보기</button>
+      </div>
     </div>
+    <p class="hint" id="hint"></p>
     <div class="tools" id="tools"></div>
+    <div class="qbar" id="qbar">
+      <span class="prog" id="prog"></span>
+      <span class="warnmsg" id="warn" hidden></span>
+      <span class="sp"></span>
+      <button class="btn ghost" id="forceSubmit" type="button" hidden>그래도 제출</button>
+      <button class="btn" id="submitBtn" type="button">제출하고 채점</button>
+    </div>
   </div>
 </header>
 
 <main class="wrap">
+  <section class="summary" id="summary" hidden></section>
   <div class="grid" id="grid"></div>
 </main>
 
@@ -97,10 +183,13 @@ button{font:inherit;color:inherit;cursor:pointer}
     <span class="mnum" id="mnum"></span>
     <button class="act" id="mclose" type="button">닫기 (Esc)</button>
   </div>
-  <div class="stage">
-    <button class="nav" id="prev" type="button" aria-label="이전 그래프">‹</button>
-    <div id="mfig"></div>
-    <button class="nav" id="next" type="button" aria-label="다음 그래프">›</button>
+  <div class="mbody">
+    <div class="stage">
+      <button class="nav" id="prev" type="button" aria-label="이전 그래프">‹</button>
+      <div id="mfig"></div>
+      <button class="nav" id="next" type="button" aria-label="다음 그래프">›</button>
+    </div>
+    <aside class="qpanel" id="qpanel" aria-label="답안"></aside>
   </div>
 </div>
 
@@ -116,27 +205,117 @@ const LINES = [
   {id:'t10', kind:'t', v:10,  label:'10℃',   steps:'10',      c:'--c-t10'},
   {id:'t0',  kind:'t', v:0,   label:'0℃',    steps:'11',      c:'--c-t0'},
 ];
+
+/* ---------- 기후 기호 ---------- */
+const KNAME = {
+  Af:'열대 우림 기후', Am:'열대 몬순 기후', Aw:'사바나 기후', AH:'열대 고산 기후',
+  BW:'사막 기후', BS:'초원(스텝) 기후',
+  Cfa:'온난 습윤 기후', Cfb:'서안 해양성 기후', Cs:'지중해성 기후', Cw:'온대 겨울 건조 기후',
+  Df:'냉대 습윤 기후', Dw:'냉대 겨울 건조 기후',
+  ET:'툰드라 기후', EF:'빙설 기후'
+};
+const FIRST = ['A','B','C','D','E'];
+const SECOND = { A:['f','m','w','H'], B:['W','S'], C:['f','s','w'], D:['f','w'], E:['T','F'] };
+const THIRD = ['a','b'];   // Cf 다음에만
+function codeOf(p){
+  if(!p || !p[0] || !p[1]) return '';
+  if(p[0]==='C' && p[1]==='f') return p[2] ? 'Cf'+p[2] : '';
+  return p[0]+p[1];
+}
+
+/* ---------- 도시 (시험 빈출 위주) ---------- */
+const CITIES = [
+  ['싱가포르','싱가포르','Af'],['키상가니','콩고 민주 공화국','Af'],['쿠알라룸푸르','말레이시아','Af'],
+  ['양곤','미얀마','Am'],['뭄바이','인도','Am'],
+  ['다윈','오스트레일리아','Aw'],['콜카타','인도','Aw'],['브라질리아','브라질','Aw'],['방콕','타이','Aw'],
+  ['보고타','콜롬비아','AH'],['키토','에콰도르','AH'],['라파스','볼리비아','AH'],['쿠스코','페루','AH'],
+  ['카이로','이집트','BW'],['리야드','사우디아라비아','BW'],['리마','페루','BW'],['앨리스스프링스','오스트레일리아','BW'],
+  ['노스맨','오스트레일리아','BS'],['울란바토르','몽골','BS'],['테헤란','이란','BS'],['니아메','니제르','BS'],
+  ['부에노스아이레스','아르헨티나','Cfa'],['상하이','중국','Cfa'],['도쿄','일본','Cfa'],['시드니','오스트레일리아','Cfa'],
+  ['런던','영국','Cfb'],['파리','프랑스','Cfb'],['웰링턴','뉴질랜드','Cfb'],['베를린','독일','Cfb'],
+  ['로마','이탈리아','Cs'],['아테네','그리스','Cs'],['샌프란시스코','미국','Cs'],['케이프타운','남아프리카 공화국','Cs'],['퍼스','오스트레일리아','Cs'],
+  ['칭다오','중국','Cw'],['홍콩','중국','Cw'],['쿤밍','중국','Cw'],
+  ['모스크바','러시아','Df'],['몬트리올','캐나다','Df'],['헬싱키','핀란드','Df'],
+  ['블라디보스토크','러시아','Dw'],['하얼빈','중국','Dw'],['선양','중국','Dw'],
+  ['배로(우트키아비크)','미국 알래스카','ET'],['누크','그린란드','ET'],
+  ['보스토크 기지','남극','EF'],['아문센·스콧 기지','남극','EF']
+].map(([n,c,k])=>({n,c,k}));
+const CITY = Object.fromEntries(CITIES.map(x=>[x.n,x]));
+
+/* ---------- 정답 (학습지 '기후 그래프 읽는 법' 단계 기준) ---------- */
+const KEY = [
+  {code:'Df', city:'모스크바',
+   why:['1단계: 강수량이 연중 고르게 내림 (500mm 이상)','3단계: 18℃ 밑인 달이 있음','5단계: 가장 추운 달 약 −9℃ → −3℃ 밑','10단계: 여름은 10℃를 넘음','12단계: 겨울 강수량도 30mm 정도 → <b>Df</b>']},
+  {code:'Cw', city:'칭다오',
+   why:['3단계: 18℃ 밑인 달이 있음','5단계: 가장 추운 달 약 0℃ → −3℃ 위','6단계: 여름·겨울 기온 차이가 큼','7단계: 겨울 강수량이 60mm 근처도 못 감 → <b>Cw</b>','여름에 비가 몰리는 계절풍 지역이에요']},
+  {code:'Cfb', city:'런던',
+   why:['5단계: 가장 추운 달 약 6℃ → −3℃ 위','6단계: 기온 차이 있음','7·8단계: 겨울·여름 모두 비가 고르게 내림 (뚜렷한 건조 없음)','9단계: 여름 기온 약 19℃ → 22℃ 아래 → <b>Cfb</b>']},
+  {code:'BW', city:'카이로',
+   why:['1단계: 강수량이 500mm에 한참 못 미침','2단계: 30mm 선 근처에도 못 감 (연 250mm 이하) → <b>BW</b>']},
+  {code:'Am', alt:['Aw'], city:'양곤',
+   why:['3단계: 모든 달 18℃ 위 → 열대(A)','4단계: 60mm 아래인 달(건기)과 위인 달(우기)이 뚜렷이 나뉨 → Aw·Am','<b>Aw·Am 둘 다 정답!</b> 그래프만 보고 둘을 구분하려고 애쓸 필요는 없어요','참고: 양곤은 계절풍 영향을 크게 받아 Am(열대 몬순)으로 분류해요. 이런 구분은 시험에서 도시·지역 힌트가 함께 나올 때 해요']},
+  {code:'EF', city:'보스토크 기지',
+   why:['강수량은 거의 없지만, 이렇게 추우면 건조(B)가 아니라 한대(E) 기후로 봐요','10단계: 모든 달 10℃를 못 넘음','11단계: 모든 달 0℃도 못 넘음 → <b>EF</b>','7월이 가장 추움 → 남반구 (남극)']},
+  {code:'Cfa', city:'부에노스아이레스',
+   why:['1월이 가장 더움 → 남반구','5단계: 가장 추운 달 약 11℃ → −3℃ 위','7·8단계: 겨울·여름 모두 비가 꽤 내림','9단계: 여름 기온 약 23℃ → 22℃ 위 → <b>Cfa</b>']},
+  {code:'BS', city:'노스맨',
+   why:['1월이 가장 더움 → 남반구','1단계: 강수량이 500mm에 못 미침','2단계: 매달 30mm 선 언저리 (연 250mm 이상) → <b>BS</b>']},
+  {code:'Af', city:'키상가니',
+   why:['3단계: 모든 달 18℃ 위 → 열대(A)','4단계: 모든 달 강수량 60mm 위 → <b>Af</b>']},
+  {code:'Dw', city:'블라디보스토크',
+   why:['5단계: 가장 추운 달 약 −13℃ → −3℃ 밑','10단계: 여름은 10℃를 넘음','12단계: 겨울 강수량이 30mm보다 부족 → <b>Dw</b>']},
+  {code:'Cs', city:'로마',
+   why:['5단계: 가장 추운 달 약 8℃ → −3℃ 위','6단계: 기온 차이 있음','7단계: 겨울 강수량 60mm 정도','8단계: 여름 강수량이 60mm보다 아래 → <b>Cs</b>']},
+  {code:'AH', city:'보고타',
+   why:['3단계: 18℃ 밑 (모든 달 11~12℃)','5단계: 가장 추운 달 −3℃ 위','6단계: 가장 더운 달과 추운 달 차이가 거의 없음 → <b>AH</b>','적도 부근이지만 해발 고도가 높아 일 년 내내 봄처럼 서늘해요']},
+  {code:'ET', city:'배로(우트키아비크)',
+   why:['강수량은 적지만, 이렇게 추우면 건조(B)가 아니라 한대(E) 기후로 봐요','10단계: 모든 달 10℃를 못 넘음','11단계: 여름 몇 달은 0℃를 넘음 → <b>ET</b>']},
+  {code:'Aw', alt:['Am'], city:'다윈',
+   why:['1월에 비가 몰림 → 남반구','3단계: 모든 달 18℃ 위 → 열대(A)','4단계: 6~9월은 비가 거의 없고 12~3월에 몰림 (건기·우기 뚜렷) → Aw·Am','<b>Aw·Am 둘 다 정답!</b> 그래프만 보고 둘을 구분하려고 애쓸 필요는 없어요','참고: 다윈은 Aw(사바나)로 분류해요']}
+];
+
+/* ---------- 상태 (이 기기에만 저장) ---------- */
+const SKEY = 'climateQuiz:v1';
+const N = GRAPHS.length;
+function blank(){ return { mode:'quiz', parts:GRAPHS.map(()=>[]), city:GRAPHS.map(()=>''), opts:GRAPHS.map(()=>null), graded:false }; }
+let S = blank();
+try {
+  const saved = JSON.parse(localStorage.getItem(SKEY));
+  if (saved && Array.isArray(saved.parts) && saved.parts.length===N) S = Object.assign(blank(), saved);
+} catch(e){}
+function save(){ try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch(e){} }
+
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function makeOpts(i){
+  const k = KEY[i], okCodes = [k.code].concat(k.alt||[]);
+  const pool = CITIES.filter(c => !okCodes.includes(c.k));
+  const byCode = {};
+  pool.forEach(c => (byCode[c.k] = byCode[c.k] || []).push(c));
+  const codes = Object.keys(byCode);
+  const same = shuffle(codes.filter(c => c[0]===k.code[0]));
+  const other = shuffle(codes.filter(c => c[0]!==k.code[0]));
+  // 같은 대분류 1~2개 + 나머지는 다른 대분류, 기후가 겹치지 않게
+  const pickCodes = same.slice(0, Math.min(2, same.length)).concat(other).slice(0,4);
+  const picks = pickCodes.map(c => shuffle(byCode[c])[0].n);
+  return shuffle([k.city].concat(picks));
+}
+GRAPHS.forEach((g,i)=>{ if(!S.opts[i] || !S.opts[i].includes(KEY[i].city)) S.opts[i] = makeOpts(i); });
+save();
+
+function isClimateOk(i){ const c=codeOf(S.parts[i]); return c===KEY[i].code || (KEY[i].alt||[]).includes(c); }
+function isCityOk(i){ return S.city[i]===KEY[i].city; }
+function isFilled(i){ return !!codeOf(S.parts[i]) && !!S.city[i]; }
+function isTouched(i){ return (S.parts[i]&&S.parts[i].length) || S.city[i]; }
+
+/* ---------- 보조선 (원래 기능 그대로) ---------- */
 const on = new Set();
-const free = GRAPHS.map(()=>[]);   // 직접 그은 선 (이미지 y좌표)
+const free = GRAPHS.map(()=>[]);
 let drawing = false, current = -1;
 const NS='http://www.w3.org/2000/svg';
-
-function yOf(g, kind, v){
-  const span = g.bot - g.top;
-  return kind==='p' ? g.bot - v/500*span : g.bot - (v-(g.tmax-50))/50*span;
-}
-function valuesAt(g, y){
-  const span=g.bot-g.top, r=(g.bot-y)/span;
-  return {t: (g.tmax-50)+r*50, p: r*500};
-}
+function yOf(g, kind, v){ const span=g.bot-g.top; return kind==='p' ? g.bot - v/500*span : g.bot - (v-(g.tmax-50))/50*span; }
+function valuesAt(g, y){ const span=g.bot-g.top, r=(g.bot-y)/span; return {t:(g.tmax-50)+r*50, p:r*500}; }
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
-
-function tag(svg, name, attrs, text){
-  const e=document.createElementNS(NS,name);
-  for(const k in attrs) e.setAttribute(k,attrs[k]);
-  if(text!=null) e.textContent=text;
-  svg.appendChild(e); return e;
-}
+function tag(svg, name, attrs, text){ const e=document.createElementNS(NS,name); for(const k in attrs) e.setAttribute(k,attrs[k]); if(text!=null) e.textContent=text; svg.appendChild(e); return e; }
 function label(svg, x, y, txt, color, anchor, big){
   const fs = big?8:9.5, w = txt.length*fs*0.62+6, h=fs+4;
   const rx = anchor==='end'? x-w : x;
@@ -144,8 +323,7 @@ function label(svg, x, y, txt, color, anchor, big){
   tag(svg,'text',{x:rx+w/2,y:y+fs*0.36,'text-anchor':'middle','font-size':fs,'font-weight':700,fill:'#fff','font-family':'IBM Plex Sans KR, sans-serif'},txt);
 }
 function drawSVG(svg, i, big){
-  const g=GRAPHS[i];
-  svg.innerHTML='';
+  const g=GRAPHS[i]; svg.innerHTML='';
   const cid='clip'+i+(big?'b':'');
   const defs=tag(svg,'defs',{});
   const cp=document.createElementNS(NS,'clipPath'); cp.id=cid;
@@ -157,7 +335,7 @@ function drawSVG(svg, i, big){
   for(const L of LINES){
     if(!on.has(L.id)) continue;
     const y=yOf(g,L.kind,L.v);
-    if(y<g.top-0.5||y>g.bot+0.5) continue;  // 이 그래프 눈금 범위 밖
+    if(y<g.top-0.5||y>g.bot+0.5) continue;
     const col=css(L.c);
     tag(layer,'line',{x1:g.x0,x2:g.x1,y1:y,y2:y,stroke:col,'stroke-width':big?2.5:2.2,'stroke-dasharray':'6 4','vector-effect':'non-scaling-stroke'});
     labels.push({y,txt:L.label,col,side:L.kind==='p'?'r':'l'});
@@ -173,7 +351,6 @@ function drawSVG(svg, i, big){
     else label(svg,(g.x0+g.x1)/2-24,lb.y,lb.txt,lb.col,'start',big);
   }
 }
-
 function makeFig(i, big){
   const g=GRAPHS[i];
   const fig=document.createElement('div'); fig.className='fig';
@@ -187,7 +364,6 @@ function makeFig(i, big){
       const rect=fig.getBoundingClientRect();
       const y=(e.clientY-rect.top)/rect.height*g.h;
       if(y<g.top||y>g.bot) return;
-      // 가까운 선을 다시 누르면 지우기
       const hit=free[i].findIndex(fy=>Math.abs(fy-y)<5);
       if(hit>=0) free[i].splice(hit,1); else free[i].push(y);
       refresh();
@@ -196,7 +372,8 @@ function makeFig(i, big){
   return {fig,svg};
 }
 
-const cards=[];
+/* ---------- 격자 ---------- */
+const cards=[], cardEls=[], ansEls=[];
 function buildGrid(){
   const grid=document.getElementById('grid');
   GRAPHS.forEach((g,i)=>{
@@ -209,10 +386,27 @@ function buildGrid(){
     const {fig,svg}=makeFig(i,false);
     const ans=document.createElement('div'); ans.className='answer';
     card.append(head,fig,ans); grid.appendChild(card);
-    cards.push(svg);
+    cards.push(svg); cardEls.push(card); ansEls.push(ans);
+  });
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function drawCards(){
+  GRAPHS.forEach((g,i)=>{
+    const card=cardEls[i], ans=ansEls[i], code=codeOf(S.parts[i]), city=S.city[i];
+    card.classList.remove('filled','allok','someng');
+    if(S.graded){
+      const a=isClimateOk(i), b=isCityOk(i);
+      card.classList.add(a&&b?'allok':'someng');
+      ans.innerHTML = `<span class="mk ${a?'ok':'ng'}">${a?'○':'✕'} ${esc(code||'미응답')}</span>`
+        + `<span class="mk ${b?'ok':'ng'}">${b?'○':'✕'} ${esc(city||'미응답')}</span>`;
+    } else if(code||city){
+      if(isFilled(i)) card.classList.add('filled');
+      ans.innerHTML = `<b>${esc(code||'기후 ?')}</b><span>${esc(city||'도시 ?')}</span>`;
+    } else ans.innerHTML = '<span>미응답</span>';
   });
 }
 
+/* ---------- 보조선 도구 ---------- */
 function buildTools(host){
   host.innerHTML='';
   const mk=(name,ids)=>{
@@ -238,6 +432,7 @@ function buildTools(host){
   grp.append(all,pen,clr); host.appendChild(grp);
 }
 
+/* ---------- 크게 보기 + 답안 패널 ---------- */
 let mSvg=null;
 function openModal(i){
   current=i;
@@ -245,10 +440,166 @@ function openModal(i){
   const {fig,svg}=makeFig(i,true); host.replaceWith(fig); fig.id='mfig'; mSvg=svg;
   document.getElementById('mnum').textContent=`${i+1}번 그래프`;
   document.getElementById('modal').hidden=false;
-  refresh();
+  document.getElementById('modal').scrollTop=0;
+  drawPanel(); refresh();
 }
-function closeModal(){document.getElementById('modal').hidden=true;current=-1;mSvg=null}
-function step(d){ if(current<0) return; openModal((current+d+GRAPHS.length)%GRAPHS.length) }
+function closeModal(){ document.getElementById('modal').hidden=true; current=-1; mSvg=null; drawCards(); updateBar(); }
+function step(d){ if(current<0) return; openModal((current+d+N)%N); }
+
+function keyBtn(txt, pressed, onclick, disabled){
+  const b=document.createElement('button'); b.type='button'; b.className='key'; b.textContent=txt;
+  b.setAttribute('aria-pressed', pressed?'true':'false');
+  if(disabled) b.disabled=true; else b.addEventListener('click', onclick);
+  return b;
+}
+function drawPanel(){
+  const i=current, P=document.getElementById('qpanel'); P.innerHTML='';
+  if(i<0) return;
+  const p=S.parts[i], locked=S.graded, code=codeOf(p);
+
+  /* 결과 (채점 후) */
+  if(locked){
+    const a=isClimateOk(i), b=isCityOk(i), k=KEY[i];
+    const v=document.createElement('div'); v.className='verdict '+(a&&b?'ok':'ng');
+    v.innerHTML = `<h4>${a&&b?'둘 다 정답!':(a||b?'하나만 맞았어요':'다시 확인해 봐요')}</h4>`
+      + `<div class="row"><span class="lab">기후</span><span>${a?'○':'✕'} 내 답 <b>${esc(code||'미응답')}</b>${a?'':` → 정답 <b>${[k.code].concat(k.alt||[]).join('·')}</b>`} · ${a?KNAME[code]:[k.code].concat(k.alt||[]).map(c=>KNAME[c]).join(' / ')}</span></div>`
+      + `<div class="row"><span class="lab">도시</span><span>${b?'○':'✕'} 내 답 <b>${esc(S.city[i]||'미응답')}</b>${b?'':` → 정답 <b>${esc(k.city)}</b>`} (${esc(CITY[k.city].c)})</span></div>`;
+    P.appendChild(v);
+    const ex=document.createElement('div'); ex.className='explain';
+    ex.innerHTML = '<b>이렇게 읽어요</b><ol>' + k.why.map(w=>`<li>${w}</li>`).join('') + '</ol>';
+    P.appendChild(ex);
+    const sim=CITIES.filter(c=>c.k===k.code && c.n!==k.city);
+    if(sim.length){
+      const s=document.createElement('div'); s.className='similar';
+      s.innerHTML = `<b>같은 ${KNAME[k.code]} 도시 (시험에 자주 나와요)</b>` + sim.map(c=>`${esc(c.n)}(${esc(c.c)})`).join(' · ');
+      P.appendChild(s);
+    }
+  }
+
+  /* ① 기후 기호 */
+  const s1=document.createElement('div'); s1.className='qsec';
+  s1.innerHTML='<h3>① 기후 기호를 골라요</h3>';
+  const set=(lvl,val)=>{ const np=p.slice(0,lvl); np[lvl]=val; S.parts[i]=np; save(); drawPanel(); drawCards(); updateBar(); };
+  const r1=document.createElement('div'); r1.className='keys';
+  FIRST.forEach(L=>r1.appendChild(keyBtn(L, p[0]===L, ()=>set(0,L), locked)));
+  s1.appendChild(r1);
+  if(p[0]){
+    const lab=document.createElement('div'); lab.className='steplabel'; lab.textContent='다음 글자'; s1.appendChild(lab);
+    const r2=document.createElement('div'); r2.className='keys sub';
+    SECOND[p[0]].forEach(L=>r2.appendChild(keyBtn(p[0]+L, p[1]===L, ()=>set(1,L), locked)));
+    s1.appendChild(r2);
+    if(p[0]==='A'){ const n=document.createElement('div'); n.className='tipnote';
+      n.innerHTML='💡 <b>Aw와 Am은 기후 그래프만 보고 구분하려고 애쓰지 않아도 돼요.</b> 고등학교에서는 도시나 지역 같은 힌트가 함께 있을 때만 구분해요. 건기가 뚜렷한 열대 그래프라면 Aw·Am 둘 다 정답!';
+      s1.appendChild(n); }
+  }
+  if(p[0]==='C' && p[1]==='f'){
+    const lab=document.createElement('div'); lab.className='steplabel'; lab.textContent='마지막 글자'; s1.appendChild(lab);
+    const r3=document.createElement('div'); r3.className='keys sub';
+    THIRD.forEach(L=>r3.appendChild(keyBtn('Cf'+L, p[2]===L, ()=>set(2,L), locked)));
+    s1.appendChild(r3);
+  }
+  const out=document.createElement('div'); out.className='codeout';
+  out.innerHTML = code ? `<span class="code">${code}</span><span class="kname">${KNAME[code]}</span>`
+    : `<span class="ph">${p[0]?'다음 글자를 골라요':'첫 글자(A~E)부터 골라요'}</span>`;
+  s1.appendChild(out);
+  P.appendChild(s1);
+
+  /* ② 도시 */
+  const s2=document.createElement('div'); s2.className='qsec';
+  s2.innerHTML='<h3>② 어느 도시의 그래프일까요?</h3>';
+  const opts=document.createElement('div'); opts.className='opts';
+  S.opts[i].forEach(n=>{
+    const c=CITY[n], b=document.createElement('button'); b.type='button'; b.className='opt';
+    b.innerHTML=`<span>${esc(n)}</span><span class="ct">${esc(c.c)}</span>`;
+    b.setAttribute('aria-pressed', S.city[i]===n?'true':'false');
+    if(locked){
+      b.disabled=true;
+      if(n===KEY[i].city) b.classList.add('right');
+      else if(S.city[i]===n) b.classList.add('wrong');
+    } else b.addEventListener('click',()=>{ S.city[i]=n; save(); drawPanel(); drawCards(); updateBar(); });
+    opts.appendChild(b);
+  });
+  s2.appendChild(opts);
+  P.appendChild(s2);
+
+  /* 다음 */
+  const nx=document.createElement('div'); nx.className='qnext';
+  if(i<N-1){
+    const b=document.createElement('button'); b.type='button'; b.className='btn'; b.textContent='다음 그래프 →';
+    b.addEventListener('click',()=>step(1)); nx.appendChild(b);
+  } else {
+    const b=document.createElement('button'); b.type='button'; b.className='btn';
+    b.textContent = locked ? '목록으로' : '마지막 그래프예요 · 닫고 제출하기';
+    b.addEventListener('click',()=>{ closeModal(); if(!locked) trySubmit(); });
+    nx.appendChild(b);
+  }
+  P.appendChild(nx);
+}
+
+/* ---------- 제출 · 채점 ---------- */
+function updateBar(){
+  const done=GRAPHS.filter((g,i)=>isFilled(i)).length;
+  const prog=document.getElementById('prog');
+  if(S.graded){
+    prog.innerHTML = '채점 완료';
+    document.getElementById('submitBtn').hidden=true;
+  } else {
+    prog.innerHTML = `${done} / ${N} 문제 입력<small>기후 기호와 도시를 모두 골라야 1문제</small>`;
+    document.getElementById('submitBtn').hidden=false;
+  }
+}
+function hideWarn(){ document.getElementById('warn').hidden=true; document.getElementById('forceSubmit').hidden=true; }
+function trySubmit(){
+  const empty=GRAPHS.map((g,i)=>i).filter(i=>!isFilled(i)).map(i=>i+1);
+  if(empty.length){
+    const w=document.getElementById('warn');
+    w.textContent = `${empty.length>6 ? empty.slice(0,6).join('·')+' 외 '+(empty.length-6)+'개' : empty.join('·')}번이 아직 덜 풀렸어요.`;
+    w.hidden=false; document.getElementById('forceSubmit').hidden=false;
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+  grade();
+}
+function grade(){
+  hideWarn();
+  S.graded=true; save();
+  drawSummary(); drawCards(); updateBar();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function drawSummary(){
+  const el=document.getElementById('summary');
+  if(!S.graded || S.mode!=='quiz'){ el.hidden=true; return; }
+  const a=GRAPHS.filter((g,i)=>isClimateOk(i)).length;
+  const b=GRAPHS.filter((g,i)=>isCityOk(i)).length;
+  const wrong=GRAPHS.filter((g,i)=>!(isClimateOk(i)&&isCityOk(i))).length;
+  const msg = wrong===0 ? '모두 맞혔어요! 완벽해요.' : `틀린 그래프를 눌러 보면 정답과 읽는 방법, 같은 기후의 다른 도시를 볼 수 있어요.`;
+  el.innerHTML = `<div class="score"><div>기후 기호<b>${a}<small> / ${N}</small></b></div><div>도시<b>${b}<small> / ${N}</small></b></div></div>`
+    + `<div class="msg">${msg}</div><div class="btns">`
+    + (wrong ? `<button class="btn" type="button" id="retryWrong">틀린 것만 다시 풀기 (${wrong})</button>` : '')
+    + `<button class="btn ghost" type="button" id="restartAll">처음부터 다시</button></div>`;
+  el.hidden=false;
+  const rw=document.getElementById('retryWrong');
+  if(rw) rw.onclick=()=>{
+    GRAPHS.forEach((g,i)=>{ if(!(isClimateOk(i)&&isCityOk(i))){ S.parts[i]=[]; S.city[i]=''; S.opts[i]=makeOpts(i); } });
+    S.graded=false; save(); drawSummary(); drawCards(); updateBar();
+  };
+  document.getElementById('restartAll').onclick=()=>{
+    const mode=S.mode; S=blank(); S.mode=mode; GRAPHS.forEach((g,i)=>S.opts[i]=makeOpts(i)); save();
+    drawSummary(); drawCards(); updateBar();
+  };
+}
+
+/* ---------- 모드 ---------- */
+function setMode(m){
+  S.mode=m; save();
+  document.body.classList.toggle('viewonly', m==='view');
+  document.querySelectorAll('.modes button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.mode===m?'true':'false'));
+  document.getElementById('qbar').hidden = m!=='quiz';
+  document.getElementById('hint').textContent = m==='quiz'
+    ? '그래프를 눌러 크게 보고, 보조선으로 확인한 뒤 기후 기호와 도시를 골라요. 14개를 다 풀면 제출하고 채점! (Aw·Am은 그래프만으로 구분하지 않아도 돼요 — 둘 다 정답)'
+    : '보조선을 켜면 14개 그래프에 한꺼번에 그어집니다. 그래프를 누르면 크게 볼 수 있어요.';
+  hideWarn(); drawSummary();
+}
 
 function refresh(){
   document.body.classList.toggle('drawing',drawing);
@@ -264,6 +615,9 @@ function refresh(){
 buildGrid();
 buildTools(document.getElementById('tools'));
 buildTools(document.getElementById('tools2'));
+document.querySelectorAll('.modes button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+document.getElementById('submitBtn').addEventListener('click',trySubmit);
+document.getElementById('forceSubmit').addEventListener('click',grade);
 document.getElementById('mclose').addEventListener('click',closeModal);
 document.getElementById('prev').addEventListener('click',()=>step(-1));
 document.getElementById('next').addEventListener('click',()=>step(1));
@@ -274,8 +628,8 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowRight') step(1);
 });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',refresh);
-refresh();
+setMode(S.mode==='view'?'view':'quiz');
+drawCards(); updateBar(); refresh();
 </script>
-
 </body>
 </html>

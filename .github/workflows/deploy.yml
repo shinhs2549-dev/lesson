@@ -17,11 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,5 +63,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
+
+  # 업로드와 배포를 다른 작업으로 나눔 (같은 작업에서 바로 배포하면 가끔 자료 묶음을 못 찾는 문제가 있음)
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4

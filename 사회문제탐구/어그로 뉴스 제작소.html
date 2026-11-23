@@ -114,6 +114,18 @@ h1 b{color:var(--hot)}
 .ansbox p{font-size:23px;margin:0 0 10px;line-height:1.55}
 .ansbox .fix{font-size:20px;color:var(--ink-2);margin:0}
 .ansbox .fix b{color:var(--ink)}
+.last{position:fixed;inset:0;background:#15191c;color:#f4f1ea;z-index:36;display:none;align-items:center;justify-content:center;padding:40px 60px}
+.last.show{display:flex}
+.last .last-in{display:flex;gap:56px;align-items:center;max-width:1500px;width:100%}
+.last img{width:min(32vw,460px);max-height:78vh;object-fit:cover;border-radius:12px;filter:grayscale(1) contrast(1.05);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.last .q{flex:1}
+.last .q blockquote{margin:0;font-size:46px;font-weight:800;line-height:1.45;letter-spacing:-.02em;word-break:keep-all}
+.last .q blockquote b{color:#ff9a6c}
+.last .who{font-size:26px;color:#aab4ba;margin:22px 0 0}
+.last .reveal{margin:30px 0 0;background:#fff8e6;color:#1d2a33;border-radius:18px;padding:22px 26px;font-size:26px;line-height:1.55;display:none}
+.last .reveal.show{display:block}
+.last .reveal b{color:#c43a2f}
+.last .tools{position:fixed;top:22px;right:28px;display:flex;gap:10px}
 @media (max-width:1000px){ .ex-body{grid-template-columns:1fr} }
 @media (max-width:1000px){ .grid{grid-template-columns:1fr} .qr{position:static} .cands{grid-template-columns:1fr} }
 </style>
@@ -123,6 +135,18 @@ h1 b{color:var(--hot)}
 <div class="modal" id="modal"><div class="in-box" id="modalBox"></div></div>
 <div class="qrfull" id="qrfull"></div>
 <div class="ex" id="ex"></div>
+<div class="last" id="last">
+  <div class="tools"><button class="btn hot sm" id="lastReveal">정말 괴벨스가 한 말일까?</button><button class="btn line sm" id="lastClose">닫기</button></div>
+  <div class="last-in">
+    <!-- 사진: lesson 저장소 _news 폴더에 goebbels.jpg 로 올리면 여기에 나옵니다 (없으면 글만 보임) -->
+    <img src="../_news/goebbels.jpg" alt="요제프 괴벨스" onerror="this.remove()">
+    <div class="q">
+      <blockquote>“선동은 <b>문장 한 줄</b>로도 가능하지만, 그것을 반박하려면 <b>수많은 문서와 증거</b>가 필요하다. 반박하려고 할 때는 사람들은 <b>이미 선동당해 있다</b>.”</blockquote>
+      <p class="who">— 요제프 괴벨스 (나치 독일 선전장관)</p>
+      <div class="reveal" id="lastBox">그런데 이 말은 <b>괴벨스가 했다는 출처가 확인되지 않아요.</b> 괴벨스의 연설이나 글에서 원문이 나온 적이 없는데, 인터넷에서 ‘괴벨스 명언’으로 퍼졌습니다.<br>가짜뉴스를 경고하는 명언조차 출처 없이 퍼진 셈이에요. 그럴듯한 말일수록 <b>누가, 어디서 한 말인지</b>부터 확인하세요.</div>
+    </div>
+  </div>
+</div>
 
 <script src="../_lib/lock.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -320,6 +344,7 @@ function drawNow(){
   document.getElementById('review').onclick = review;
   document.getElementById('csv').onclick = exportCsv;
   Array.prototype.forEach.call($app.querySelectorAll('[data-ex]'), function(b){ b.onclick = function(){ openEx(b.getAttribute('data-ex')); }; });
+  var lg = document.getElementById('lastGo'); if (lg) lg.onclick = openLast;
   var at = document.getElementById('ansT'); if (at) at.onclick = function(){ showAns = !showAns; drawNow(); };
   var nx = document.getElementById('nextPh'); if (nx) nx.onclick = function(){ setPhase(nx.getAttribute('data-to')); };
   var rc = document.getElementById('recand'); if (rc) rc.onclick = function(){ FN.session(code).update({ candidates:computeCandidates() }).catch(fail); };
@@ -408,6 +433,7 @@ function awardView(){
   if (rev.length === NEWS.awards.length) {
     h += '<div class="panel"><h2>마무리 질문</h2><p style="margin:0;font-size:24px">상을 받은 기사는 무엇이 클릭을 끌었나요? 실제 언론과 SNS에서도 이런 기사가 계속 만들어지는 이유를 \'클릭 수\'와 \'돈\'의 관계로 설명해 보세요.</p>' +
       '<p class="muted" style="margin:8px 0 0">학생들은 자기 기기에 답을 씁니다. 제출 ' + list().filter(function(s){ return s.reflect; }).length + '명</p></div>';
+    h += '<div class="panel" style="display:flex;justify-content:space-between;align-items:center"><div><h2 style="margin:0">마지막 한 마디</h2><p class="muted" style="margin:4px 0 0">괴벨스 명언으로 수업을 마무리해요.</p></div><button class="btn hot" id="lastGo">크게 띄우기</button></div>';
   }
   if (rev.length) h += '<div class="row" style="justify-content:flex-end"><button class="btn line sm" id="resetRev">공개 다시 하기</button></div>';
   return h;
@@ -481,6 +507,21 @@ document.addEventListener('keydown', function(e){
   else if (e.key === 'ArrowLeft') moveEx(-1);
   else if (e.key === 'Escape') closeEx();
   else if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); if (!exOpen){ exOpen = true; paintEx(); } }
+});
+
+/* 마지막 한 마디 (괴벨스 명언 → 출처 반전) */
+function openLast(){
+  document.getElementById('lastBox').classList.remove('show');
+  document.getElementById('lastReveal').style.display = '';
+  document.getElementById('last').classList.add('show');
+}
+document.getElementById('lastReveal').onclick = function(){ document.getElementById('lastBox').classList.add('show'); this.style.display = 'none'; };
+document.getElementById('lastClose').onclick = function(){ document.getElementById('last').classList.remove('show'); };
+document.addEventListener('keydown', function(e){
+  var L = document.getElementById('last');
+  if (!L.classList.contains('show')) return;
+  if (e.key === 'Escape') L.classList.remove('show');
+  else if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); document.getElementById('lastReveal').click(); }
 });
 
 function confetti(){

@@ -241,7 +241,7 @@ function enter(){
   }, fail);
   EF.session(code).onSnapshot(function(d){
     var old = sess; sess = d.data() || sess;
-    var key = [sess.phase, sess.shownRanks || 0, sess.ai ? sess.ai.at : 0].join('|');
+    var key = [sess.phase, sess.shownRanks || 0, sess.ai ? sess.ai.at : 0, sess.verdict ? sess.verdict.at : 0].join('|');
     if (key !== lastKey){
       var changed = old && old.phase !== sess.phase;
       lastKey = key;
@@ -594,6 +594,16 @@ function renderWrap(pane){
     h += '<div class="box"><h4>🤖 AI가 뽑은 논리왕</h4>' + top.filter(function(t){ return [3, 2, 1].indexOf(t.rank) < shown; }).map(function(t){
       return '<p style="margin:2px 0">' + MEDAL[t.rank] + ' ' + t.rank + '위 · ' + esc(U.stance(t.stance || '').short || '') + (t.sid === me.sid ? ' <b style="color:var(--hot)">나!</b>' : '') + '</p>';
     }).join('') + '<p class="small" style="margin:6px 0 0">이름과 의견은 칠판에서 확인하세요.</p></div>';
+  }
+  var V = sess.verdict;
+  if (V){
+    h += '<div class="box" style="font-family:\'Nanum Myeongjo\',Batang,serif"><h4 style="text-align:center;letter-spacing:.4em;font-size:18px">판결</h4>' +
+      '<p class="small" style="text-align:center;margin:0 0 8px">' + EU.stances.map(function(x){ return x.id + '안 ' + (V.counts[x.id] || 0) + '명'; }).join(' · ') + '</p>' +
+      '<p style="font-weight:800;margin:0 0 8px">주문: ' + esc(V.order) + '</p>' +
+      '<p style="margin:0 0 6px"><b>다수의견</b> (' + esc(U.stance(V.majority.stance).short) + ') ' + esc(V.majority.summary) + '</p>' +
+      V.dissents.map(function(x){ return '<p style="margin:0 0 6px"><b>반대의견</b> (' + esc(U.stance(x.stance).short) + ') ' + esc(x.summary) + '</p>'; }).join('') +
+      (V.concurring ? '<p style="margin:0 0 6px"><b>별개의견</b> ' + esc(V.concurring) + '</p>' : '') +
+      (V.teacher ? '<p style="margin:0"><b>선생님 주장에 대한 판단</b> ' + esc(V.teacher) + '</p>' : '') + '</div>';
   }
   if (myDoc.op) h += '<h3 style="margin-top:0">내 의견에 대한 AI 심사</h3>' + aiBlock();
   var I = EU.intro, first = I.options.filter(function(x){ return x.id === (myDoc.intro||{}).stance; })[0] || {};

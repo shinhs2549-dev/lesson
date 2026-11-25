@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>안락사 공론장</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --bg:#f2f1ee; --paper:#fffefb; --ink:#1f2933; --ink-2:#5a6670; --line:#e0ddd6;
+  --accent:#2f5d8a; --accent-soft:#e4edf6; --hot:#b4534a; --hot-soft:#f8e6e3;
+  --ok:#1f8a4c; --ok-soft:#e3f4ea; --bad:#c43a2f; --bad-soft:#fbe7e5;
+  --A:#b4534a; --B:#c98a1b; --C:#2f7d6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:16px;line-height:1.55;-webkit-tap-highlight-color:transparent;padding-bottom:env(safe-area-inset-bottom)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input,textarea{font:inherit;color:inherit}
+.bar{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{font-weight:800;letter-spacing:-.02em;font-size:18px}
+.brand b{color:#9cc3ea}
+#who{font-size:13px;opacity:.85;text-align:right}
+main{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+.tabs{display:flex;gap:4px;margin:0 0 16px;position:sticky;top:50px;z-index:4;background:var(--bg);padding:8px 0}
+.tab{flex:1;padding:10px 2px;border-radius:12px;background:var(--paper);border:2px solid var(--line);font-weight:700;font-size:14px;color:var(--ink-2);white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.tab .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-left:4px;vertical-align:middle}
+h2{font-size:21px;margin:4px 0 6px;letter-spacing:-.02em}
+h3{font-size:17px;margin:18px 0 8px}
+.lead{color:var(--ink-2);margin:0 0 14px}
+.box{background:var(--paper);border:2px solid var(--line);border-radius:16px;padding:14px 16px;margin:0 0 14px}
+.box h4{margin:0 0 8px;font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:600}
+.news{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 12px}
+.news .tag{display:inline-block;font-size:12px;font-weight:700;color:var(--hot);background:var(--hot-soft);border-radius:6px;padding:2px 7px;margin-bottom:6px}
+.news .t{font-size:19px;font-weight:800;line-height:1.35;letter-spacing:-.02em;margin:0 0 8px;word-break:keep-all}
+.news .b{margin:0;color:#33414a;word-break:keep-all}
+.quote{margin:10px 0;padding:10px 12px;border-left:4px solid var(--hot);background:var(--hot-soft);border-radius:0 10px 10px 0;font-weight:600;word-break:keep-all}
+.q{background:var(--paper);border:2px solid var(--line);border-radius:16px;padding:14px;margin:0 0 12px}
+.q .n{font-weight:800;color:var(--accent);margin-right:4px}
+.q p{margin:0 0 6px;word-break:keep-all}
+.ox{display:flex;gap:8px;margin:8px 0 0}
+.ox button{flex:1;padding:10px;border-radius:10px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:17px}
+.ox button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.seg button{flex:1 1 auto;padding:9px 10px;border-radius:10px;border:2px solid var(--line);background:#fff;font-weight:700;font-size:14px;line-height:1.3}
+.seg button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.seg .lab{flex:0 0 100%;font-size:13px;color:var(--ink-2);margin:4px 0 -2px}
+.in{width:100%;padding:11px 12px;border-radius:10px;border:2px solid var(--line);background:#fff;font-size:15px}
+.in:focus{outline:none;border-color:var(--accent)}
+textarea.in{min-height:96px;resize:vertical}
+.btn{display:block;width:100%;padding:15px;border-radius:14px;background:var(--accent);color:#fff;font-weight:800;font-size:17px;margin:8px 0}
+.btn:disabled{opacity:.4}
+.btn.hot{background:var(--hot)}
+.btn.line{background:var(--paper);color:var(--ink);border:2px solid var(--line)}
+.small{font-size:13px;color:var(--ink-2)}
+.res{border-radius:12px;padding:10px 12px;margin:8px 0 0;font-size:15px}
+.res.ok{background:var(--ok-soft)} .res.bad{background:var(--bad-soft)} .res.info{background:var(--accent-soft)}
+.res b.mk{font-size:16px;margin-right:6px}
+.res.ok b.mk{color:var(--ok)} .res.bad b.mk{color:var(--bad)}
+.score{font-size:42px;font-weight:900;color:var(--accent);letter-spacing:-.03em;margin:0}
+.data{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 8px}
+.data .k{font-weight:800}
+.data .r{font-weight:800;color:var(--hot)}
+.bogi{background:#fff;border:2px solid var(--ink);border-radius:10px;padding:10px 12px;margin:8px 0}
+.bogi p{margin:2px 0}
+.bogi .h{text-align:center;font-weight:800;margin:0 0 4px}
+.choices{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:8px 0 0}
+.choices button{padding:9px 4px;border-radius:10px;border:2px solid var(--line);background:#fff;font-size:13px;font-weight:700;line-height:1.3}
+.choices button b{display:block;font-size:16px}
+.choices button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.stance{display:block;width:100%;text-align:left;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:#fff;margin:0 0 8px}
+.stance b{display:block;font-size:16px}
+.stance span{font-size:14px;color:var(--ink-2)}
+.stance.on{border-color:var(--accent);background:var(--accent-soft)}
+.kw{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}
+.kw button{padding:6px 10px;border-radius:999px;border:2px solid var(--line);background:#fff;font-size:13px;font-weight:700}
+.kw button.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.field{margin:0 0 14px}
+.field > p{margin:0 0 6px;font-weight:700}
+.field > p small{font-weight:500;color:var(--ink-2)}
+.count{float:right;font-size:12px;color:var(--ink-2);font-weight:500}
+.op{background:#fff;border:2px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 10px}
+.op .st{display:inline-block;font-size:13px;font-weight:800;color:#fff;border-radius:6px;padding:2px 8px;margin:0 0 8px}
+.op .st.A{background:var(--A)} .op .st.B{background:var(--B)} .op .st.C{background:var(--C)}
+.op .row{margin:0 0 8px;word-break:keep-all;white-space:pre-wrap}
+.op .row b{display:block;font-size:13px;color:var(--ink-2);margin:0 0 1px}
+.op .row i{font-style:normal;font-size:12px;color:var(--accent);font-weight:700}
+.stars{display:flex;gap:4px;margin:6px 0 10px}
+.stars button{font-size:34px;line-height:1;color:#d6d1c6;padding:0 2px}
+.stars button.on{color:#f2a51a}
+.lock{text-align:center;padding:30px 16px}
+.lock .big{font-size:46px;margin:0}
+.notice{background:#fff7e0;border:2px solid #f0dca0;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:14px}
+.err{background:var(--bad-soft);border:2px solid #efc3be;border-radius:12px;padding:14px;margin:20px 0}
+.sess{display:block;width:100%;text-align:left;padding:16px;border-radius:14px;background:var(--paper);border:2px solid var(--line);margin:0 0 8px;font-weight:700;font-size:17px}
+.sess span{display:block;font-size:13px;font-weight:500;color:var(--ink-2)}
+.cmt{background:#f7f6f2;border-radius:10px;padding:8px 10px;margin:6px 0 0;font-size:14px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header class="bar"><div class="brand">안락사 <b>공론장</b></div><div id="who"></div></header>
+<main id="app"><p class="small">불러오는 중…</p></main>
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="content.js"></script>
+<script src="fb.js"></script>
+<script>
+(function(){
+"use strict";
+var $app = document.getElementById('app');
+if (!window.EU || !window.EF){
+  $app.innerHTML = '<div class="err"><b>수업 파일을 불러오지 못했어요.</b><br>인터넷 연결을 확인하고 새로고침해 주세요. 계속 안 되면 선생님께 알려 주세요.</div>';
+  return;
+}
+var U = EUUTIL, esc = U.esc;
+var params = new URLSearchParams(location.search);
+var code = (params.get('s') || '').trim();
+var sess = null, me = null, myDoc = {}, tab = 'intro';
+var draft = { intro:{}, ox:[], q2:{ c1:[{},{},{}], c2:[], c4:null, w1:'', w2:'' }, op:null, rate:{}, wrap:{} };
+var cache = {}, myRatings = {}, gotRatings = [], lastKey = '', unsubGot = null;
+
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+}
+function fail(e){
+  console.error(e);
+  var msg = EF.isPermission(e) ? '저장소 설정이 아직 끝나지 않았어요. 선생님께 알려 주세요.' : '인터넷 연결을 확인하고 새로고침해 주세요.';
+  $app.innerHTML = '<div class="err"><b>연결에 문제가 생겼어요.</b><br>' + esc(msg) + '</div>';
+}
+function $$(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function keep(fn){ var y = window.scrollY; fn(); window.scrollTo(0, y); }
+function save(data){ return EF.students(code).doc(me.sid).set(data, { merge:true }); }
+
+/* ---------- 시작: 수업 고르기 → 학번·이름 ---------- */
+EF.ready.then(start).catch(fail);
+
+function start(){
+  if (!code) return pickSession();
+  EF.session(code).get().then(function(d){
+    if (!d.exists){ code = ''; return pickSession('수업 코드를 찾을 수 없어요. 다시 골라 주세요.'); }
+    sess = d.data();
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('eu:' + code) || 'null'); } catch(e){}
+    if (saved && saved.sid) { me = saved; enter(); } else join();
+  }).catch(fail);
+}
+
+function pickSession(msg){
+  $app.innerHTML = '<h2>수업 고르기</h2><p class="lead">최근 열린 수업 중에서 내 수업을 고르세요.</p>' +
+    (msg ? '<div class="notice">' + esc(msg) + '</div>' : '') +
+    '<div id="list"><p class="small">불러오는 중…</p></div>' +
+    '<div class="box"><h4>수업 코드로 들어가기</h4><input class="in" id="codeIn" inputmode="numeric" maxlength="4" placeholder="칠판에 보이는 4자리 코드">' +
+    '<button class="btn" id="codeGo">들어가기</button></div>';
+  document.getElementById('codeGo').onclick = function(){
+    var c = document.getElementById('codeIn').value.trim();
+    if (!/^\d{4}$/.test(c)) return toast('4자리 숫자를 입력하세요');
+    go(c);
+  };
+  EF.sessions().where('day', '>=', U.daysAgo(14)).get().then(function(snap){
+    var arr = [];
+    snap.forEach(function(d){ arr.push(d.data()); });
+    arr.sort(function(a,b){ return (b.createdMs||0) - (a.createdMs||0); });
+    document.getElementById('list').innerHTML = arr.length ? arr.map(function(s){
+      return '<button class="sess" data-code="' + esc(s.code) + '">' + esc(s.label) + '<span>' + esc(U.dayLabel(s.day)) + ' · 코드 ' + esc(s.code) + '</span></button>';
+    }).join('') : '<p class="small">최근 열린 수업이 없어요. 칠판의 QR코드나 코드를 이용하세요.</p>';
+    $$('.sess').forEach(function(b){ b.onclick = function(){ go(b.getAttribute('data-code')); }; });
+  }).catch(fail);
+}
+function go(c){ code = c; history.replaceState(null, '', '?s=' + encodeURIComponent(c)); start(); }
+
+function join(){
+  $app.innerHTML = '<h2>' + esc(sess.label) + '</h2><p class="lead">학번과 이름을 입력하세요. 친구들에게는 이름이 보이지 않아요.</p>' +
+    '<div class="box"><input class="in" id="sid" inputmode="numeric" maxlength="5" placeholder="학번 5자리 (예: 20315)" style="margin-bottom:8px">' +
+    '<input class="in" id="nm" maxlength="10" placeholder="이름"><button class="btn" id="joinBtn">시작하기</button></div>';
+  document.getElementById('joinBtn').onclick = function(){
+    var sid = document.getElementById('sid').value.trim();
+    var nm = document.getElementById('nm').value.trim();
+    if (!/^\d{5}$/.test(sid)) return toast('학번 5자리를 입력하세요');
+    if (!nm) return toast('이름을 입력하세요');
+    EF.students(code).doc(sid).set({ sid:sid, name:nm, uid:EF.auth.currentUser.uid, joinedAt:EF.ts() }, { merge:true })
+      .then(function(){
+        me = { sid:sid, name:nm };
+        localStorage.setItem('eu:' + code, JSON.stringify(me));
+        enter();
+      }).catch(fail);
+  };
+}
+
+function enter(){
+  document.getElementById('who').innerHTML = esc(sess.label) + '<br>' + esc(me.sid) + ' ' + esc(me.name) +
+    ' · <a href="#" id="out" style="color:#9cc3ea">바꾸기</a>';
+  document.getElementById('out').onclick = function(e){
+    e.preventDefault();
+    if (!confirm('학번·이름을 다시 입력할까요?')) return;
+    localStorage.removeItem('eu:' + code); location.reload();
+  };
+  try { var d = JSON.parse(localStorage.getItem('eu:draft:' + code + ':' + me.sid) || 'null'); if (d) draft.op = d; } catch(e){}
+  var first = true;
+  EF.students(code).doc(me.sid).onSnapshot(function(d){
+    var was = myDoc.hiddenByTeacher;
+    myDoc = d.data() || {};
+    if (first){
+      first = false;
+      if (sess.phase === 'wrap') tab = 'wrap';
+      else if (sess.phase === 'read') tab = 'op';
+      else if (myDoc.op) tab = 'op';
+      else if (myDoc.q2) tab = 'op';
+      else if (myDoc.ox) tab = 'q2';
+      else if (myDoc.intro) tab = 'ox';
+      render();
+    } else if (myDoc.hiddenByTeacher !== was) render();
+  }, fail);
+  EF.session(code).onSnapshot(function(d){
+    var old = sess; sess = d.data() || sess;
+    var key = [sess.phase, (sess.readOrder||[]).join(',')].join('|');
+    if (key !== lastKey){
+      var changed = old && old.phase !== sess.phase;
+      lastKey = key;
+      if (changed && sess.phase === 'read'){ tab = 'op'; toast('돌려 읽기 시작!'); }
+      if (changed && sess.phase === 'wrap'){ tab = 'wrap'; toast('정리 시간이에요'); }
+      if (sess.phase !== 'solo') listenGot();
+      if (!first) render();
+    }
+  }, fail);
+}
+// 내 의견에 친구들이 남긴 별점·한마디
+function listenGot(){
+  if (unsubGot) return;
+  unsubGot = EF.ratings(code).where('target', '==', me.sid).onSnapshot(function(s){
+    gotRatings = []; s.forEach(function(d){ gotRatings.push(d.data()); });
+    if (tab === 'op') keep(render);
+  }, function(e){ console.error(e); });
+}
+
+/* ---------- 화면 ---------- */
+var TABS = [['intro','도입'], ['ox','활동 1'], ['q2','활동 2'], ['op','활동 3'], ['wrap','정리']];
+function done(id){ return !!myDoc[id]; }
+function render(){
+  $app.innerHTML = '<div class="tabs">' + TABS.map(function(t){
+    return '<button class="tab" data-tab="' + t[0] + '" aria-selected="' + (tab===t[0]) + '">' + t[1] + (done(t[0]) ? '<span class="dot"></span>' : '') + '</button>';
+  }).join('') + '</div><div id="pane"></div>';
+  $$('.tab').forEach(function(b){ b.onclick = function(){ tab = b.getAttribute('data-tab'); render(); window.scrollTo(0,0); }; });
+  var pane = document.getElementById('pane');
+  if (tab !== 'intro' && !myDoc.intro){
+    pane.innerHTML = '<div class="lock"><p class="big">✋</p><p>먼저 <b>도입</b>에서 지금 내 생각을 골라 주세요.<br><span class="small">수업이 끝날 때 처음 생각과 비교해 봐요.</span></p><button class="btn" data-next="intro">도입으로 가기</button></div>';
+    return bindNext(pane);
+  }
+  ({ intro:renderIntro, ox:renderOx, q2:renderQ2, op:renderOp, wrap:renderWrap })[tab](pane);
+}
+function bindNext(pane){
+  $$('[data-next]', pane).forEach(function(b){ b.onclick = function(){ tab = b.getAttribute('data-next'); render(); window.scrollTo(0,0); }; });
+}
+function counter(id, max){
+  var el = document.getElementById(id), c = document.getElementById(id + 'C');
+  if (el && c){ var f = function(){ c.textContent = el.value.length + '/' + max; }; f(); el.addEventListener('input', f); }
+}
+
+/* 도입 */
+function renderIntro(pane){
+  var I = EU.intro, d = myDoc.intro;
+  var h = '<h2>도입. 생각 열기</h2><div class="news"><span class="tag">' + esc(I.tag) + '</span><p class="t">' + esc(I.title) + '</p><p class="b">' + esc(I.body) + '</p></div>';
+  h += '<div class="q"><p><b>' + esc(I.question) + '</b></p>';
+  if (d){
+    var o = I.options.filter(function(x){ return x.id === d.stance; })[0] || {};
+    h += '<div class="res info">내가 고른 처음 생각: <b>' + esc(o.label) + '</b><br>' + esc(d.why) + '</div><p class="small" style="margin:8px 0 0">처음 생각은 바꿀 수 없어요. 수업이 끝날 때 다시 확인합니다.</p></div>';
+    h += '<button class="btn" data-next="ox">활동 1로 가기</button>';
+  } else {
+    h += '<div class="seg">' + I.options.map(function(o){
+      return '<button class="' + (draft.intro.stance===o.id?'on':'') + '" data-st="' + o.id + '">' + esc(o.label) + '</button>';
+    }).join('') + '</div><p class="small" style="margin:12px 0 6px">그렇게 생각한 이유를 한 줄로</p>' +
+      '<input class="in" id="iw" maxlength="100" value="' + esc(draft.intro.why || '') + '" placeholder="솔직하게 써도 괜찮아요"></div>' +
+      '<button class="btn" id="iGo">저장하고 활동 1로</button>';
+  }
+  pane.innerHTML = h;
+  $$('[data-st]', pane).forEach(function(b){ b.onclick = function(){ draft.intro.stance = b.getAttribute('data-st'); keep(function(){ renderIntro(pane); }); }; });
+  var iw = document.getElementById('iw'); if (iw) iw.oninput = function(){ draft.intro.why = iw.value; };
+  var go = document.getElementById('iGo');
+  if (go) go.onclick = function(){
+    var why = (draft.intro.why || '').trim();
+    if (!draft.intro.stance) return toast('찬성·반대·잘 모르겠다 중 하나를 고르세요');
+    if (why.length < 3) return toast('이유를 한 줄 써 주세요');
+    go.disabled = true;
+    var v = { stance:draft.intro.stance, why:why };
+    save({ intro:v, introAt:EF.ts() }).then(function(){ myDoc.intro = v; tab = 'ox'; render(); window.scrollTo(0,0); })
+      .catch(function(e){ go.disabled = false; fail(e); });
+  };
+  bindNext(pane);
+}
+
+/* 활동 1. OX */
+function renderOx(pane){
+  var d = myDoc.ox, N = EU.ox.length;
+  var h = '<h2>활동 1. OX 퀴즈</h2><p class="lead">나는 안락사에 대해 얼마나 알고 있을까? 모르면 짐작해도 괜찮아요.</p>';
+  if (d) h += '<div class="box" style="text-align:center"><p class="small">내 점수</p><p class="score">' + d.score + ' / ' + N + '</p></div>';
+  EU.ox.forEach(function(it, i){
+    var pick = d ? d.ans[i] : draft.ox[i];
+    h += '<div class="q"><p><span class="n">' + (i+1) + '.</span>' + esc(it.q) + '</p>';
+    if (d){
+      var ok = pick === it.a;
+      h += '<div class="res ' + (ok?'ok':'bad') + '"><b class="mk">' + (ok?'정답':'오답') + '</b>정답은 <b>' + (it.a?'O':'X') + '</b>. ' + esc(it.ex) + '</div>';
+    } else {
+      h += '<div class="ox"><button class="' + (pick===true?'on':'') + '" data-i="' + i + '" data-v="1">O</button><button class="' + (pick===false?'on':'') + '" data-i="' + i + '" data-v="0">X</button></div>';
+    }
+    h += '</div>';
+  });
+  if (!d){
+    var n = draft.ox.filter(function(v){ return v === true || v === false; }).length;
+    h += '<button class="btn" id="oxGo"' + (n < N ? ' disabled' : '') + '>제출하고 채점하기 (' + n + '/' + N + ')</button>';
+  } else h += '<button class="btn line" data-next="q2">활동 2로 가기</button>';
+  pane.innerHTML = h;
+  $$('.ox button', pane).forEach(function(b){
+    b.onclick = function(){ draft.ox[+b.getAttribute('data-i')] = b.getAttribute('data-v') === '1'; keep(function(){ renderOx(pane); }); };
+  });
+  var go = document.getElementById('oxGo');
+  if (go) go.onclick = function(){
+    var score = 0, ans = EU.ox.map(function(it, i){ if (draft.ox[i] === it.a) score++; return draft.ox[i]; });
+    go.disabled = true;
+    var v = { ans:ans, score:score };
+    save({ ox:v, oxAt:EF.ts() }).then(function(){ myDoc.ox = v; render(); window.scrollTo(0,0); })
+      .catch(function(e){ go.disabled = false; fail(e); });
+  };
+  bindNext(pane);
+}
+
+/* 활동 2. 문제풀이 */
+function renderQ2(pane){
+  var d = myDoc.q2, D = draft.q2;
+  var h = '<h2>활동 2. 무엇이 허용되고 무엇이 불법일까?</h2>';
+  if (d) h += '<div class="box" style="text-align:center"><p class="small">내 점수 (2-1, 2-2, 2-4)</p><p class="score">' + d.score + ' / ' + U.Q2_TOTAL + '</p></div>';
+
+  // 2-1
+  h += '<h3>2-1. 개념 정리</h3><p class="small" style="margin:-4px 0 8px">설명에 맞는 이름을 고르고, 우리나라에서 합법인지 불법인지 고르세요. (둘 다 맞아야 1점)</p>';
+  EU.c1.forEach(function(it, i){
+    var a = d ? (d.c1[i] || {}) : D.c1[i];
+    h += '<div class="q"><p><span class="n">' + (i+1) + ')</span>' + esc(it.t) + '</p>';
+    if (d){
+      var ok = a.name === it.name && a.legal === it.legal;
+      var nm = EU.names.filter(function(x){ return x.id === it.name; })[0].label;
+      h += '<div class="res ' + (ok?'ok':'bad') + '"><b class="mk">' + (ok?'정답':'오답') + '</b><b>' + esc(nm) + '</b> · 우리나라에서 <b>' + (it.legal?'합법':'불법') + '</b></div>';
+    } else {
+      h += '<div class="seg"><span class="lab">이름</span>' + EU.names.map(function(x){
+        return '<button class="' + (a.name===x.id?'on':'') + '" data-c1="' + i + '" data-nm="' + x.id + '">' + esc(x.label) + '</button>';
+      }).join('') + '<span class="lab">우리나라에서는?</span>' +
+        '<button class="' + (a.legal===true?'on':'') + '" data-c1="' + i + '" data-lg="1">합법</button>' +
+        '<button class="' + (a.legal===false?'on':'') + '" data-c1="' + i + '" data-lg="0">불법</button></div>';
+    }
+    h += '</div>';
+  });
+
+  // 2-2
+  h += '<h3>2-2. 이 상황, 법적으로 가능할까?</h3><p class="small" style="margin:-4px 0 8px">현재 우리나라 법을 기준으로 판단하세요.</p>';
+  EU.c2.forEach(function(it, i){
+    var pick = d ? d.c2[i] : D.c2[i];
+    h += '<div class="q"><p><span class="n">' + it.key + '.</span>' + esc(it.t) + '</p>';
+    if (d){
+      var ok = pick === it.a;
+      h += '<div class="res ' + (ok?'ok':'bad') + '"><b class="mk">' + (ok?'정답':'오답') + '</b><b>' + (it.a?'가능':'불가능') + '</b>. ' + esc(it.ex) + '</div>';
+    } else {
+      h += '<div class="ox"><button class="' + (pick===true?'on':'') + '" data-c2="' + i + '" data-v="1">가능</button><button class="' + (pick===false?'on':'') + '" data-c2="' + i + '" data-v="0">불가능</button></div>';
+    }
+    h += '</div>';
+  });
+
+  // 2-3
+  var C3 = EU.c3;
+  h += '<h3>2-3. 두 여론조사, 어느 쪽이 맞을까?</h3>' + C3.data.map(function(x){
+    return '<div class="data"><span class="k">자료 (' + x.key + ')</span> <span class="small">' + esc(x.who) + '</span><p style="margin:4px 0">질문: "' + esc(x.ask) + '"</p><p style="margin:0">→ <span class="r">' + esc(x.result) + '</span></p></div>';
+  }).join('');
+  [['w1', C3.q1, C3.ex1], ['w2', C3.q2, C3.ex2]].forEach(function(w, k){
+    h += '<div class="q"><p><span class="n">' + (k ? '②' : '①') + '</span>' + esc(w[1]) + '</p>';
+    if (d) h += '<div class="res info">' + esc(d[w[0]]) + '</div><div class="res ok"><b class="mk">해설</b>' + esc(w[2]) + '</div>';
+    else h += '<textarea class="in" id="' + w[0] + '" maxlength="300" placeholder="2~3문장">' + esc(D[w[0]]) + '</textarea>';
+    h += '</div>';
+  });
+
+  // 2-4
+  var C4 = EU.c4, p4 = d ? d.c4 : D.c4;
+  h += '<h3>2-4. 고르기 문항</h3><div class="q"><p>' + esc(C4.q) + '</p><div class="bogi"><p class="h">&lt;보기&gt;</p>' +
+    C4.items.map(function(x){ return '<p>' + esc(x) + '</p>'; }).join('') + '</div>';
+  if (d){
+    var ok4 = p4 === C4.answer;
+    h += '<div class="res ' + (ok4?'ok':'bad') + '"><b class="mk">' + (ok4?'정답':'오답') + '</b>정답 <b>' + '①②③④⑤'[C4.answer] + ' ' + esc(C4.choices[C4.answer]) + '</b>. ' + esc(C4.ex) + '</div>';
+  } else {
+    h += '<div class="choices">' + C4.choices.map(function(c, i){
+      return '<button class="' + (p4===i?'on':'') + '" data-c4="' + i + '"><b>' + '①②③④⑤'[i] + '</b>' + esc(c) + '</button>';
+    }).join('') + '</div>';
+  }
+  h += '</div>';
+
+  if (!d){
+    var miss = missQ2();
+    h += '<button class="btn" id="q2Go"' + (miss ? ' disabled' : '') + '>' + (miss ? '남은 문항: ' + miss : '제출하고 채점하기') + '</button>';
+  } else h += '<button class="btn line" data-next="op">활동 3으로 가기</button>';
+  pane.innerHTML = h;
+
+  function rerender(){ keep(function(){ renderQ2(pane); }); }
+  $$('[data-nm]', pane).forEach(function(b){ b.onclick = function(){ D.c1[+b.getAttribute('data-c1')].name = b.getAttribute('data-nm'); rerender(); }; });
+  $$('[data-lg]', pane).forEach(function(b){ b.onclick = function(){ D.c1[+b.getAttribute('data-c1')].legal = b.getAttribute('data-lg') === '1'; rerender(); }; });
+  $$('[data-c2]', pane).forEach(function(b){ b.onclick = function(){ D.c2[+b.getAttribute('data-c2')] = b.getAttribute('data-v') === '1'; rerender(); }; });
+  $$('[data-c4]', pane).forEach(function(b){ b.onclick = function(){ D.c4 = +b.getAttribute('data-c4'); rerender(); }; });
+  ['w1','w2'].forEach(function(k){
+    var el = document.getElementById(k);
+    if (el) el.oninput = function(){
+      D[k] = el.value;
+      var g = document.getElementById('q2Go'), m = missQ2();
+      if (g){ g.disabled = !!m; g.textContent = m ? '남은 문항: ' + m : '제출하고 채점하기'; }
+    };
+  });
+  var go = document.getElementById('q2Go');
+  if (go) go.onclick = function(){
+    var v = { c1:D.c1.map(function(a){ return { name:a.name, legal:a.legal }; }), c2:D.c2.slice(0, EU.c2.length), c4:D.c4,
+              w1:D.w1.trim(), w2:D.w2.trim() };
+    v.score = U.scoreQ2(v);
+    go.disabled = true;
+    save({ q2:v, q2At:EF.ts() }).then(function(){ myDoc.q2 = v; render(); window.scrollTo(0,0); })
+      .catch(function(e){ go.disabled = false; fail(e); });
+  };
+  bindNext(pane);
+}
+function missQ2(){
+  var D = draft.q2, m = [];
+  if (!D.c1.every(function(a){ return a.name && (a.legal === true || a.legal === false); })) m.push('2-1');
+  if (EU.c2.some(function(_, i){ return D.c2[i] !== true && D.c2[i] !== false; })) m.push('2-2');
+  if ((D.w1 || '').trim().length < 5 || (D.w2 || '').trim().length < 5) m.push('2-3');
+  if (D.c4 == null) m.push('2-4');
+  return m.join(', ');
+}
+
+/* 활동 3. 나의 의견 */
+function opHtml(o, withCounter){
+  if (!o) return '';
+  var st = U.stance(o.stance);
+  function kw(k){ return k && k.length ? ' <i>#' + k.map(esc).join(' #') + '</i>' : ''; }
+  return '<div class="op"><span class="st ' + esc(o.stance) + '">' + esc(st.label) + '</span>' +
+    '<div class="row"><b>근거 1' + kw(o.k1) + '</b>' + esc(o.r1) + '</div>' +
+    '<div class="row"><b>근거 2' + kw(o.k2) + '</b>' + esc(o.r2) + '</div>' +
+    (withCounter ? '<div class="row"><b>예상 반론</b>' + esc(o.counter) + '</div>' : '') +
+    '<div class="row" style="margin:0"><b>' + (withCounter ? '나의 재반박' : '반론이 나오면 이렇게 답한다') + '</b>' + esc(o.rebut) + '</div></div>';
+}
+function caseHtml(){
+  var C = EU.case;
+  return '<div class="news"><span class="tag">사례</span><p class="t">' + esc(C.title) + '</p><p class="b">' + esc(C.body) + '</p><p class="quote">' + esc(C.quote) + '</p><p class="b small">' + esc(C.note) + '</p></div>';
+}
+function renderOp(pane){
+  var ph = sess.phase || 'solo';
+  var h = '<h2>활동 3. 우리 사회는 무엇을 허용해야 할까?</h2>';
+  if (myDoc.hiddenByTeacher) h += '<div class="notice">선생님이 내 의견을 다시 써 달라고 했어요. 내용을 고쳐서 다시 제출해 주세요.</div>';
+  if (ph === 'solo' || myDoc.hiddenByTeacher) return renderOpForm(pane, h);
+  if (ph === 'read') return renderRead(pane, h);
+  // 정리 단계: 내 의견 + 받은 반응
+  h += myOpBlock();
+  pane.innerHTML = h + '<button class="btn line" data-next="wrap">정리로 가기</button>';
+  bindNext(pane);
+}
+function myOpBlock(){
+  var h = '';
+  if (myDoc.op){
+    h += '<h3>내 의견</h3>' + opHtml(myDoc.op, true);
+    var got = gotRatings.filter(function(r){ return !r.hidden; });
+    h += '<h3>친구들의 반응</h3>';
+    if (!got.length) h += '<p class="small">아직 받은 반응이 없어요.</p>';
+    else {
+      var avg = got.reduce(function(a, r){ return a + r.stars; }, 0) / got.length;
+      h += '<div class="box"><p style="margin:0">설득력 별점 평균 <b style="font-size:20px">' + avg.toFixed(1) + '</b> <span class="small">(' + got.length + '명)</span></p>' +
+        got.filter(function(r){ return r.comment; }).map(function(r){ return '<div class="cmt">' + esc(r.comment) + '</div>'; }).join('') + '</div>';
+    }
+  } else h += '<div class="notice">활동 3 의견을 제출하지 않았어요.</div>';
+  return h;
+}
+function blankOp(){ return { stance:'', r1:'', k1:[], r2:'', k2:[], counter:'', rebut:'', deep:'', plan:'' }; }
+function renderOpForm(pane, h){
+  if (!draft.op) draft.op = myDoc.op ? JSON.parse(JSON.stringify(myDoc.op)) : blankOp();
+  var o = draft.op;
+  h += '<p class="lead">아래 사례를 읽고 내 입장을 정해 보세요. 정답은 없어요. 근거가 얼마나 탄탄한지가 중요해요.</p>' + caseHtml();
+  h += '<div class="field"><p>① 나의 입장</p>' + EU.stances.map(function(s){
+    return '<button class="stance' + (o.stance===s.id?' on':'') + '" data-stance="' + s.id + '"><b>' + esc(s.label) + '</b><span>' + esc(s.desc) + '</span></button>';
+  }).join('') + '</div>';
+  h += '<div class="box"><h4>관점 키워드</h4><div class="chips">' + EU.keywords.map(function(k){ return '<span class="chip">' + esc(k) + '</span>'; }).join('') + '</div></div>';
+  [['r1','k1','② 근거 1'], ['r2','k2','② 근거 2']].forEach(function(f){
+    h += '<div class="field"><p>' + f[2] + ' <small>(사용한 키워드를 하나 이상 고르세요)</small><span class="count" id="' + f[0] + 'C"></span></p>' +
+      '<textarea class="in" id="' + f[0] + '" maxlength="300" placeholder="사례에 적용해서 2~3문장">' + esc(o[f[0]]) + '</textarea><div class="kw">' +
+      EU.keywords.map(function(k){ return '<button class="' + (o[f[1]].indexOf(k)>=0?'on':'') + '" data-kf="' + f[1] + '" data-k="' + esc(k) + '">' + esc(k) + '</button>'; }).join('') + '</div></div>';
+  });
+  h += '<div class="field"><p>③ 예상 반론 <small>내 입장에 반대하는 사람은 무엇이라고 말할까?</small><span class="count" id="counterC"></span></p><textarea class="in" id="counter" maxlength="300">' + esc(o.counter) + '</textarea></div>';
+  h += '<div class="field"><p>③ 나의 재반박 <small>그 반론에 나는 어떻게 답할까?</small><span class="count" id="rebutC"></span></p><textarea class="in" id="rebut" maxlength="300">' + esc(o.rebut) + '</textarea></div>';
+  h += '<div class="field"><p>④ 깊이 생각하기<span class="count" id="deepC"></span></p><p class="small" style="font-weight:500">' + esc(EU.deepQ) + '</p><textarea class="in" id="deep" maxlength="300">' + esc(o.deep) + '</textarea></div>';
+  h += '<div class="field"><p>⑤ 사회적 해결 방안<span class="count" id="planC"></span></p><p class="small" style="font-weight:500">' + esc(EU.planQ) + '</p><textarea class="in" id="plan" maxlength="300">' + esc(o.plan) + '</textarea></div>';
+  h += '<button class="btn hot" id="opGo">' + (myDoc.op ? '수정해서 다시 제출' : '의견 제출하기') + '</button>';
+  if (myDoc.op && !myDoc.hiddenByTeacher) h += '<p class="small" style="text-align:center">제출 완료! 돌려 읽기가 시작되기 전까지는 고칠 수 있어요.</p>';
+  pane.innerHTML = h;
+
+  function stash(){ try { localStorage.setItem('eu:draft:' + code + ':' + me.sid, JSON.stringify(o)); } catch(e){} }
+  ['r1','r2','counter','rebut','deep','plan'].forEach(function(k){
+    var el = document.getElementById(k);
+    el.oninput = function(){ o[k] = el.value; stash(); };
+    counter(k, 300);
+  });
+  $$('[data-stance]', pane).forEach(function(b){ b.onclick = function(){ o.stance = b.getAttribute('data-stance'); stash(); keep(function(){ renderOp(pane); }); }; });
+  $$('[data-kf]', pane).forEach(function(b){
+    b.onclick = function(){
+      var arr = o[b.getAttribute('data-kf')], k = b.getAttribute('data-k'), i = arr.indexOf(k);
+      if (i >= 0) arr.splice(i, 1); else arr.push(k);
+      stash(); b.classList.toggle('on', i < 0);
+    };
+  });
+  document.getElementById('opGo').onclick = function(){
+    var t = {}; ['r1','r2','counter','rebut','deep','plan'].forEach(function(k){ t[k] = (o[k] || '').trim(); });
+    if (!o.stance) return toast('① 입장을 고르세요');
+    if (t.r1.length < 15) return toast('근거 1을 조금 더 써 주세요');
+    if (!o.k1.length) return toast('근거 1의 키워드를 고르세요');
+    if (t.r2.length < 15) return toast('근거 2를 조금 더 써 주세요');
+    if (!o.k2.length) return toast('근거 2의 키워드를 고르세요');
+    if (t.counter.length < 10) return toast('예상 반론을 써 주세요');
+    if (t.rebut.length < 10) return toast('재반박을 써 주세요');
+    if (t.deep.length < 10) return toast('④ 깊이 생각하기를 써 주세요');
+    if (t.plan.length < 10) return toast('⑤ 해결 방안을 써 주세요');
+    var v = { stance:o.stance, r1:t.r1, k1:o.k1.slice(), r2:t.r2, k2:o.k2.slice(), counter:t.counter, rebut:t.rebut, deep:t.deep, plan:t.plan };
+    var btn = this; btn.disabled = true;
+    save({ op:v, opAt:EF.ts(), hiddenByTeacher:false }).then(function(){
+      myDoc.op = v; myDoc.hiddenByTeacher = false; toast('의견을 제출했어요'); render(); window.scrollTo(0,0);
+    }).catch(function(e){ btn.disabled = false; fail(e); });
+  };
+}
+
+function loadOps(ids){
+  var need = ids.filter(function(id){ return !(id in cache); });
+  return Promise.all(need.map(function(id){
+    return EF.students(code).doc(id).get().then(function(d){ var x = d.data() || {}; cache[id] = x.hiddenByTeacher ? null : (x.op || null); });
+  }));
+}
+function renderRead(pane, h){
+  var order = sess.readOrder || [], stOf = sess.readStance || {};
+  var mine = myDoc.op ? myDoc.op.stance : '';
+  var targets = U.readTargets(code, me.sid, order, stOf, mine, EU.READ_COUNT);
+  h += '<p class="lead">친구 의견 ' + targets.length + '개를 이름 없이 읽어요. 되도록 <b>나와 다른 입장</b>의 의견이 먼저 나와요. 설득력 별점을 주고, 묻고 싶은 것이나 반박을 한 줄 남겨 보세요.</p>';
+  if (!targets.length){ pane.innerHTML = h + '<div class="lock"><p class="big">📄</p>아직 읽을 의견이 없어요.</div>' + myOpBlock(); return; }
+  pane.innerHTML = h + '<p class="small">불러오는 중…</p>';
+  Promise.all([loadOps(targets)].concat(targets.map(function(t){
+    if (myRatings[t]) return null;
+    return EF.ratings(code).doc(me.sid + '_' + t).get().then(function(d){ if (d.exists) myRatings[t] = d.data(); });
+  }))).then(function(){
+    var out = h;
+    targets.forEach(function(t, i){
+      var o = cache[t], r = myRatings[t], dr = draft.rate[t] || (draft.rate[t] = { stars:0, comment:'' });
+      out += '<div class="q"><p class="n" style="margin:0 0 8px">' + (i+1) + '번째 의견</p>' + (o ? opHtml(o, false) : '<p class="small">이 의견은 볼 수 없어요.</p>');
+      if (r){
+        out += '<p style="margin:6px 0">내 별점 ' + '★★★★★'.slice(0, r.stars) + '<span style="color:#d6d1c6">' + '★★★★★'.slice(r.stars) + '</span></p>' +
+          (r.comment ? '<div class="cmt">내 한마디: ' + esc(r.comment) + '</div>' : '');
+      } else if (o){
+        out += '<p class="small" style="margin:8px 0 0">이 의견은 얼마나 설득력 있나요? (내 입장과 달라도 공정하게)</p><div class="stars">' + [1,2,3,4,5].map(function(s){
+          return '<button class="' + (dr.stars>=s?'on':'') + '" data-t="' + t + '" data-s="' + s + '">★</button>';
+        }).join('') + '</div><input class="in" data-cm="' + t + '" maxlength="80" placeholder="묻고 싶은 것이나 반박 한 줄 (선택)" value="' + esc(dr.comment) + '">' +
+          '<button class="btn" data-rate="' + t + '">보내기</button>';
+      }
+      out += '</div>';
+    });
+    var n = targets.filter(function(t){ return myRatings[t]; }).length;
+    if (n === targets.length) out += '<div class="lock" style="padding:10px"><p class="big">👏</p>다 읽었어요! 아래에서 내 의견에 대한 반응을 확인해 보세요.</div>';
+    out += myOpBlock();
+    pane.innerHTML = out;
+    $$('[data-s]', pane).forEach(function(b){
+      b.onclick = function(){ draft.rate[b.getAttribute('data-t')].stars = +b.getAttribute('data-s'); keep(function(){ renderOp(pane); }); };
+    });
+    $$('[data-cm]', pane).forEach(function(i){ i.oninput = function(){ draft.rate[i.getAttribute('data-cm')].comment = i.value; }; });
+    $$('[data-rate]', pane).forEach(function(b){
+      b.onclick = function(){
+        var t = b.getAttribute('data-rate'), dr = draft.rate[t];
+        if (!dr.stars) return toast('별점을 골라 주세요');
+        b.disabled = true;
+        var doc = { reader:me.sid, target:t, stars:dr.stars, comment:(dr.comment || '').trim(), hidden:false, at:EF.ts() };
+        EF.ratings(code).doc(me.sid + '_' + t).set(doc).then(function(){
+          myRatings[t] = doc; keep(function(){ renderOp(pane); });
+        }).catch(function(e){ b.disabled = false; fail(e); });
+      };
+    });
+  }).catch(fail);
+}
+
+/* 정리 */
+function renderWrap(pane){
+  var h = '<h2>정리. 다시 돌아보기</h2>';
+  if (sess.phase !== 'wrap' && !myDoc.wrap){
+    pane.innerHTML = h + '<div class="lock"><p class="big">🔒</p>선생님이 정리를 시작하면 열려요.</div>';
+    return;
+  }
+  var I = EU.intro, first = I.options.filter(function(x){ return x.id === (myDoc.intro||{}).stance; })[0] || {};
+  h += '<div class="box"><p style="margin:0 0 4px">처음 생각: <b>' + esc(first.label || '-') + '</b> <span class="small">' + esc((myDoc.intro||{}).why || '') + '</span></p>' +
+    '<p style="margin:0">활동 3 입장: <b>' + esc(myDoc.op ? U.stance(myDoc.op.stance).label : '제출 안 함') + '</b></p></div>';
+  if (!draft.wrap.init) draft.wrap = { init:true, change:(myDoc.wrap||{}).change || '', line:(myDoc.wrap||{}).line || '' };
+  var w = draft.wrap;
+  h += '<div class="q"><p><b>처음 생각과 비교하면?</b></p><div class="seg">' + EU.wrap.options.map(function(o){
+    return '<button class="' + (w.change===o.id?'on':'') + '" data-ch="' + o.id + '">' + esc(o.label) + '</button>';
+  }).join('') + '</div><p style="margin:14px 0 6px"><b>' + esc(EU.wrap.q) + '</b></p><textarea class="in" id="wl" maxlength="300">' + esc(w.line) + '</textarea></div>';
+  h += '<button class="btn" id="wGo">' + (myDoc.wrap ? '고쳐서 저장' : '저장하기') + '</button>';
+  if (myDoc.wrap) h += '<p class="small" style="text-align:center">저장 완료! 오늘 수업 수고했어요.</p>';
+  pane.innerHTML = h;
+  $$('[data-ch]', pane).forEach(function(b){ b.onclick = function(){ w.change = b.getAttribute('data-ch'); keep(function(){ renderWrap(pane); }); }; });
+  document.getElementById('wl').oninput = function(e){ w.line = e.target.value; };
+  document.getElementById('wGo').onclick = function(){
+    var line = w.line.trim();
+    if (!w.change) return toast('처음 생각과 비교해 하나를 고르세요');
+    if (line.length < 5) return toast('한 가지를 써 주세요');
+    var v = { change:w.change, line:line }, btn = this; btn.disabled = true;
+    save({ wrap:v, wrapAt:EF.ts() }).then(function(){ myDoc.wrap = v; toast('저장했어요'); render(); })
+      .catch(function(e){ btn.disabled = false; fail(e); });
+  };
+}
+})();
+</script>
+</body>
+</html>

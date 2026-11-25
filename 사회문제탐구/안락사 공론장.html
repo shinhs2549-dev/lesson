@@ -121,7 +121,22 @@ table.x td.hi{background:var(--accent-soft);font-weight:800}
 .ansbox{background:var(--accent-soft);border:3px solid var(--accent);border-radius:20px;padding:20px 24px}
 .ansbox .a{font-size:32px;font-weight:900;color:var(--accent);margin:0 0 8px}
 .ansbox p{font-size:23px;margin:0;line-height:1.55;word-break:keep-all}
-@media (max-width:1000px){ .ex-body,.grid,.two{grid-template-columns:1fr} .qr{position:static} }
+.claimB{background:#1f2933;color:#f4f1ea;border-radius:22px;padding:30px 36px}
+.claimB .tag{display:inline-block;font-size:18px;font-weight:800;background:#f4f1ea;color:#1f2933;border-radius:8px;padding:3px 12px;margin:0 0 12px}
+.claimB .t{font-size:44px;font-weight:900;line-height:1.3;margin:0 0 12px;word-break:keep-all}
+.claimB p{font-size:24px;margin:0 0 14px;word-break:keep-all}
+.claimB .rs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:0 0 16px}
+.claimB .rs div{background:rgba(255,255,255,.08);border-radius:16px;padding:18px 20px;font-size:21px;line-height:1.55;word-break:keep-all}
+.claimB .rs b{display:block;color:#ffcf9c;font-size:23px;margin:0 0 6px}
+.claimB .cc{font-size:30px;font-weight:900;color:#ffcf9c}
+.claimB .src{font-size:15px;opacity:.65;margin:0}
+.rb{background:#fff;border:2px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 10px;display:flex;gap:12px;align-items:flex-start}
+.rb.best{border-color:#f0c25a;background:#fff8e6}
+.rb .c{flex:1;font-size:20px;line-height:1.55;word-break:keep-all;white-space:pre-wrap}
+.rb .c small{display:block;font-size:15px;color:var(--ink-2);margin:6px 0 0}
+.star{font-size:30px;color:#d6d1c6;line-height:1;padding:2px 6px}
+.star.on{color:#f2a51a}
+@media (max-width:1000px){ .ex-body,.grid,.two{grid-template-columns:1fr} .qr{position:static} .claimB .rs{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -303,7 +318,8 @@ function drawNow(){
   $$('[data-ex]').forEach(function(b){ b.onclick = function(){ openEx(b.getAttribute('data-ex')); }; });
   var nx = document.getElementById('nextPh'); if (nx) nx.onclick = function(){ setPhase(nx.getAttribute('data-to')); };
   $$('[data-reveal]').forEach(function(b){ b.onclick = function(){ reveal(b.getAttribute('data-reveal'), b.getAttribute('data-sid')); }; });
-  var rr = document.getElementById('resetRev'); if (rr) rr.onclick = function(){ if (confirm('이름 공개를 처음부터 다시 할까요?')) EF.session(code).update({ revealed:[] }).catch(fail); };
+  var rr = document.getElementById('resetRev'); if (rr) rr.onclick = function(){ if (confirm('이름 공개를 처음부터 다시 할까요?')) EF.session(code).update({ revealed:[], bestShown:[] }).catch(fail); };
+  $$('[data-show]').forEach(function(b){ b.onclick = function(){ EF.session(code).update({ bestShown:(sess.bestShown || []).concat([b.getAttribute('data-show')]) }).then(confetti).catch(fail); }; });
 }
 function groupCount(){
   var g = GROUPS.filter(function(x){ return x.id === sess.groupId; })[0];
@@ -336,9 +352,23 @@ function soloView(all){
     bar('2-3', '<보기> 고르기', pct(d2.filter(function(s){ return s.q2.c4 === EU.c4.answer; }).length, d2.length), 'c4:0') +
     '</div></div>';
   h += '<div class="panel"><h2>활동 3 입장 (' + d3.length + '명 제출)</h2>' + stackBar(stanceItems(d3)) + '</div>';
+  h += tchPanel(all);
   var yet = all.filter(function(s){ return !s.op; });
   if (yet.length) h += '<div class="panel"><h2>활동 3 아직 안 낸 학생</h2><div class="names">' + yet.map(function(s){ return '<span class="name">' + esc(s.name) + '</span>'; }).join('') + '</div></div>';
   return h + nextBtn('read', '돌려 읽기 시작');
+}
+
+function weakBars(arr){
+  return '<div class="bars">' + EU.weak.map(function(w){
+    var n = arr.filter(function(s){ return s.tch.weak.indexOf(w.id) >= 0; }).length;
+    return bar(esc(w.label), '', pct(n, arr.length), '', n + '명');
+  }).join('') + '</div>';
+}
+function tchPanel(all){
+  var d = all.filter(function(s){ return s.tch; });
+  return '<div class="panel"><div class="row" style="justify-content:space-between;margin:0 0 12px"><h2 style="margin:0">활동 4. 선생님 주장 반박 (' + d.length + '명 제출)</h2><div class="row">' +
+    '<button class="btn line sm" data-ex="tch:0">선생님 주장 띄우기</button><button class="btn hot sm" data-ex="tch:1">반박 모아 보기</button></div></div>' +
+    '<p class="hint">학생들이 찾은 약한 고리</p>' + weakBars(d) + '</div>';
 }
 
 /* 2단계: 돌려 읽기 */
@@ -355,6 +385,7 @@ function readView(all){
   var h = '<div class="panel"><h2>돌려 읽기</h2><p class="muted" style="margin:0 0 10px">학생마다 친구 의견 ' + EU.READ_COUNT + '개를 이름 없이 읽고 설득력 별점과 한마디를 남겨요. 나와 다른 입장의 의견이 먼저 배정됩니다. 의견 ' + order.length + '개가 돌고 있어요.</p>' +
     '<p class="big">' + finished + '<small> / ' + all.length + '명 다 읽음</small></p><div class="prog"><div style="width:' + p + '%"></div></div><p class="muted" style="margin:0">별점 ' + ratings.length + ' / ' + expected + '개 · 한마디 ' + cm + '개</p></div>';
   h += '<div class="panel"><h2>돌고 있는 의견의 입장</h2>' + stackBar(stanceItems(order.map(function(id){ return { op:{ stance:stOf[id] } }; }))) + '</div>';
+  h += tchPanel(all);
   return h + nextBtn('wrap', '정리 시작');
 }
 
@@ -407,7 +438,16 @@ function wrapView(all){
     else h += '<button class="btn hot" data-reveal="' + s.id + '" data-sid="' + esc(top.sid) + '">이름 공개하기</button>';
     h += '</div>';
   });
-  if (rev.length) h += '<div class="row" style="justify-content:flex-end"><button class="btn line sm" id="resetRev">공개 다시 하기</button></div>';
+  // 선생님을 이긴 반박
+  var best = sess.best || [], shown = sess.bestShown || [];
+  h += '<h2 style="font-size:30px;margin:26px 0 12px">🏆 선생님을 이긴 반박 <span class="muted" style="font-size:18px;font-weight:600">활동 4에서 ★로 고른 반박</span></h2>';
+  if (!best.length) h += '<div class="panel"><p class="muted" style="margin:0">아직 고른 반박이 없어요. 활동 4 \'반박 모아 보기\'에서 ★를 눌러 골라 주세요.</p><button class="btn line sm" data-ex="tch:1" style="margin-top:10px">반박 모아 보기</button></div>';
+  best.forEach(function(sid){
+    var s = students[sid]; if (!s || !s.tch) return;
+    h += '<div class="king"><p class="r" style="font-size:22px;margin:0;white-space:pre-wrap;word-break:keep-all">' + esc(s.tch.rebut) + '</p>' +
+      (shown.indexOf(sid) >= 0 ? '<p class="winner">' + esc(s.name) + '<small>' + esc(sid) + '</small></p>' : '<button class="btn hot" data-show="' + esc(sid) + '" style="margin-top:12px">이름 공개하기</button>') + '</div>';
+  });
+  if (rev.length || shown.length) h += '<div class="row" style="justify-content:flex-end"><button class="btn line sm" id="resetRev">공개 다시 하기</button></div>';
   return h;
 }
 function reveal(stanceId, sid){
@@ -418,7 +458,7 @@ function reveal(stanceId, sid){
 /* ---------- 해설 화면 (전자칠판에 크게) ---------- */
 var exKey = null, exOpen = false;
 var EX_LIST = EU.ox.map(function(_, i){ return 'ox:' + i; })
-  .concat(EU.terms.map(function(_, i){ return 'term:' + i; }), EU.c1.map(function(_, i){ return 'c1:' + i; }), EU.c2.map(function(_, i){ return 'c2:' + i; }), ['c4:0']);
+  .concat(EU.terms.map(function(_, i){ return 'term:' + i; }), EU.c1.map(function(_, i){ return 'c1:' + i; }), EU.c2.map(function(_, i){ return 'c2:' + i; }), ['c4:0', 'tch:0', 'tch:1']);
 function openEx(key){ exKey = key; exOpen = false; paintEx(); document.getElementById('ex').classList.add('show'); }
 function closeEx(){ document.getElementById('ex').classList.remove('show'); exKey = null; }
 function moveEx(d){
@@ -434,7 +474,7 @@ function distBars(title, rows, total){
 function paintEx(){
   if (!exKey) return;
   var box = document.getElementById('ex'), kind = exKey.split(':')[0], i = +exKey.split(':')[1];
-  var all = list(), left = '', side = '', title = '', ans = null;
+  var all = list(), left = '', side = '', title = '', ans = null, full = false;
   if (kind === 'ox'){
     var it = EU.ox[i], d = all.filter(function(s){ return s.ox; });
     title = '활동 1 · ' + (i+1) + '번';
@@ -468,6 +508,24 @@ function paintEx(){
         return '<tr><td><b>' + esc(x.name) + '</b></td><td>' + esc(x.who.split(' (')[0]) + '</td><td style="font-weight:800;color:' + (x.kr ? 'var(--C)' : 'var(--hot)') + '">' + (x.kr ? '합법' : '불법') + '</td></tr>';
       }).join('') + '</table></div>';
     }
+  } else if (kind === 'tch' && i === 0){
+    var T = EU.teacher; full = true;
+    title = '활동 4 · 선생님의 주장';
+    left = '<div class="claimB"><span class="tag">선생님의 주장</span><p class="t">' + esc(T.title) + '</p><p>' + esc(T.intro) + '</p><div class="rs">' +
+      T.reasons.map(function(r, k){ return '<div><b>근거 ' + (k+1) + '. ' + esc(r.h) + '</b>' + esc(r.t) + '</div>'; }).join('') +
+      '</div><p class="cc">' + esc(T.conclusion) + '</p><p class="src">' + esc(T.source) + '</p></div>';
+  } else if (kind === 'tch'){
+    var dt = all.filter(function(s){ return s.tch; }), best = sess.best || [];
+    title = '활동 4 · 학생들의 반박';
+    var arr = dt.slice().sort(function(a, b){ return (best.indexOf(b.sid) >= 0) - (best.indexOf(a.sid) >= 0) || b.tch.rebut.length - a.tch.rebut.length; });
+    left = '<div class="panel" style="margin:0"><h2>반박 ' + dt.length + '개 <span class="muted" style="font-size:17px;font-weight:600">이름 없이 · ★를 누르면 베스트 반박으로 뽑혀요</span></h2>' +
+      (arr.length ? arr.map(function(s){
+        var on = best.indexOf(s.sid) >= 0;
+        return '<div class="rb' + (on ? ' best' : '') + '"><button class="star' + (on ? ' on' : '') + '" data-best="' + esc(s.sid) + '">★</button><div class="c">' + esc(s.tch.rebut) +
+          '<small>약한 고리: ' + s.tch.weak.map(function(id){ return (EU.weak.filter(function(w){ return w.id === id; })[0] || {}).label; }).map(esc).join(', ') + '</small></div></div>';
+      }).join('') : '<p class="muted">아직 반박이 없어요.</p>') + '</div>';
+    side = '<div class="panel" style="margin:0"><h2>약한 고리 (' + dt.length + '명)</h2>' + weakBars(dt) + '</div>' +
+      '<div class="panel" style="margin:0"><h2>베스트 반박 ' + best.length + '개</h2><p class="muted" style="margin:0;font-size:18px">이름은 정리 단계에서 공개해요.</p></div>';
   } else {
     var C4 = EU.c4, d4 = all.filter(function(s){ return s.q2; });
     title = '활동 2 · 고르기 문항';
@@ -480,20 +538,27 @@ function paintEx(){
   var idx = EX_LIST.indexOf(exKey);
   box.innerHTML = '<div class="ex-top"><div class="k">' + esc(title) + ' <span class="muted" style="font-size:20px">' + (idx + 1) + ' / ' + EX_LIST.length + '</span></div>' +
     '<div class="row"><button class="btn line sm" id="exPrev"' + (idx === 0 ? ' disabled' : '') + '>← 이전</button>' +
-    (exOpen || kind === 'term' ? '' : '<button class="btn hot sm" id="exOpen">정답 공개</button>') +
+    (exOpen || kind === 'term' || kind === 'tch' ? '' : '<button class="btn hot sm" id="exOpen">정답 공개</button>') +
     '<button class="btn line sm" id="exNext"' + (idx === EX_LIST.length - 1 ? ' disabled' : '') + '>다음 →</button><button class="btn sm" id="exClose">닫기</button></div></div>' +
-    '<div class="ex-body"><div>' + left + '</div><div class="side">' + side + '</div></div>';
+    '<div class="ex-body"' + (full ? ' style="grid-template-columns:1fr"' : '') + '><div>' + left + '</div>' + (full ? '' : '<div class="side">' + side + '</div>') + '</div>';
   document.getElementById('exPrev').onclick = function(){ moveEx(-1); };
   document.getElementById('exNext').onclick = function(){ moveEx(1); };
   document.getElementById('exClose').onclick = closeEx;
   var o = document.getElementById('exOpen'); if (o) o.onclick = function(){ exOpen = true; paintEx(); };
+  $$('[data-best]', box).forEach(function(b){
+    b.onclick = function(){
+      var sid = b.getAttribute('data-best'), best = (sess.best || []).slice(), k = best.indexOf(sid);
+      if (k >= 0) best.splice(k, 1); else best.push(sid);
+      EF.session(code).update({ best:best }).catch(fail);
+    };
+  });
 }
 document.addEventListener('keydown', function(e){
   if (!exKey) return;
   if (e.key === 'ArrowRight') moveEx(1);
   else if (e.key === 'ArrowLeft') moveEx(-1);
   else if (e.key === 'Escape') closeEx();
-  else if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); if (exKey.indexOf('term:') === 0) moveEx(1); else if (!exOpen){ exOpen = true; paintEx(); } }
+  else if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); if (/^(term|tch):/.test(exKey)) moveEx(1); else if (!exOpen){ exOpen = true; paintEx(); } }
 });
 
 function confetti(){
@@ -564,16 +629,18 @@ function exportCsv(){
   var st = ratingStats();
   var head = ['학번','이름','처음 생각','처음 이유','활동1 점수(/10)','활동2 점수(/9)',
     '활동3 입장','근거1','근거1 키워드','근거2','근거2 키워드','예상 반론','재반박','깊이 생각하기','해결 방안',
-    '받은 설득력 별점 평균','받은 별점 수','받은 한마디','설득왕','정리: 생각 변화','정리: 영향 준 내용'];
+    '받은 설득력 별점 평균','받은 별점 수','받은 한마디','설득왕','활동4 약한 고리','활동4 반박','활동4 인정할 점','활동4 다른 해결책','베스트 반박','정리: 생각 변화','정리: 영향 준 내용'];
   var rows = list().sort(function(a,b){ return a.sid < b.sid ? -1 : 1; }).map(function(s){
-    var I = s.intro || {}, q2 = s.q2 || {}, o = s.op || {}, x = st[s.sid], w = s.wrap || {};
+    var I = s.intro || {}, q2 = s.q2 || {}, o = s.op || {}, x = st[s.sid], w = s.wrap || {}, T4 = s.tch || {};
     var first = EU.intro.options.filter(function(v){ return v.id === I.stance; })[0];
     var ch = EU.wrap.options.filter(function(v){ return v.id === w.change; })[0];
     var cms = ratings.filter(function(r){ return r.target === s.sid && r.comment && !r.hidden; }).map(function(r){ return r.comment; }).join(' / ');
     var king = (sess.revealed || []).some(function(r){ return r.sid === s.sid; }) ? '설득왕(' + o.stance + '안)' : '';
     return [s.sid, s.name, first ? first.label : '', I.why || '', s.ox ? s.ox.score : '', s.q2 ? q2.score : '',
       o.stance ? U.stance(o.stance).label : '', o.r1 || '', (o.k1 || []).join(', '), o.r2 || '', (o.k2 || []).join(', '), o.counter || '', o.rebut || '', o.deep || '', o.plan || '',
-      x ? x.avg.toFixed(2) : '', x ? x.n : '', cms, king, ch ? ch.label : '', w.line || ''];
+      x ? x.avg.toFixed(2) : '', x ? x.n : '', cms, king,
+      (T4.weak || []).map(function(id){ return (EU.weak.filter(function(v){ return v.id === id; })[0] || {}).label; }).join(', '), T4.rebut || '', T4.admit || '', T4.alt || '',
+      (sess.best || []).indexOf(s.sid) >= 0 ? '베스트' : '', ch ? ch.label : '', w.line || ''];
   });
   var csv = '﻿' + [head].concat(rows).map(function(r){
     return r.map(function(v){ v = String(v == null ? '' : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',');

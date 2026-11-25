@@ -323,7 +323,8 @@ function soloView(all){
       var ok = dO.filter(function(s){ return s.ox.ans[i] === it.a; }).length;
       return bar((i+1) + '번', it.q, pct(ok, dO.length), 'ox:' + i);
     }).join('') + '</div></div>';
-  h += '<div class="panel"><h2>활동 2 문항별 정답률 (' + d2.length + '명)</h2><p class="hint">눌러서 크게 보기. 2-3은 학생 답을 이름 없이 보여 줘요.</p><div class="bars">' +
+  h += '<div class="panel" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div><h2 style="margin:0">활동 2 전에: 용어 정리</h2><p class="muted" style="margin:4px 0 0;font-size:18px">' + EU.terms.map(function(t){ return esc(t.name); }).join(' · ') + '</p></div><button class="btn hot" data-ex="term:0">크게 띄워 설명하기</button></div>';
+  h += '<div class="panel"><h2>활동 2 문항별 정답률 (' + d2.length + '명)</h2><p class="hint">문항을 누르면 해설 화면이 크게 열려요.</p><div class="bars">' +
     EU.c1.map(function(it, i){
       var ok = d2.filter(function(s){ var a = s.q2.c1[i] || {}; return a.name === it.name && a.legal === it.legal; }).length;
       return bar('2-1 (' + (i+1) + ')', it.t, pct(ok, d2.length), 'c1:' + i);
@@ -332,8 +333,7 @@ function soloView(all){
       var ok = d2.filter(function(s){ return s.q2.c2[i] === it.a; }).length;
       return bar('2-2 ' + it.key, it.t, pct(ok, d2.length), 'c2:' + i);
     }).join('') +
-    '<div class="bar click" data-ex="c3:0"><div class="lab">2-3<small>두 여론조사 (서술형)</small></div><div class="track" style="background:none;font-size:17px;color:var(--ink-2);display:flex;align-items:center">학생 답 보기 →</div><div class="pct">' + d2.length + '명</div></div>' +
-    bar('2-4', '<보기> 고르기', pct(d2.filter(function(s){ return s.q2.c4 === EU.c4.answer; }).length, d2.length), 'c4:0') +
+    bar('2-3', '<보기> 고르기', pct(d2.filter(function(s){ return s.q2.c4 === EU.c4.answer; }).length, d2.length), 'c4:0') +
     '</div></div>';
   h += '<div class="panel"><h2>활동 3 입장 (' + d3.length + '명 제출)</h2>' + stackBar(stanceItems(d3)) + '</div>';
   var yet = all.filter(function(s){ return !s.op; });
@@ -418,7 +418,7 @@ function reveal(stanceId, sid){
 /* ---------- 해설 화면 (전자칠판에 크게) ---------- */
 var exKey = null, exOpen = false;
 var EX_LIST = EU.ox.map(function(_, i){ return 'ox:' + i; })
-  .concat(EU.c1.map(function(_, i){ return 'c1:' + i; }), EU.c2.map(function(_, i){ return 'c2:' + i; }), ['c3:0', 'c4:0']);
+  .concat(EU.terms.map(function(_, i){ return 'term:' + i; }), EU.c1.map(function(_, i){ return 'c1:' + i; }), EU.c2.map(function(_, i){ return 'c2:' + i; }), ['c4:0']);
 function openEx(key){ exKey = key; exOpen = false; paintEx(); document.getElementById('ex').classList.add('show'); }
 function closeEx(){ document.getElementById('ex').classList.remove('show'); exKey = null; }
 function moveEx(d){
@@ -444,8 +444,8 @@ function paintEx(){
   } else if (kind === 'c1'){
     var c = EU.c1[i], d1 = all.filter(function(s){ return s.q2; });
     var nm = EU.names.filter(function(x){ return x.id === c.name; })[0].label;
-    title = '활동 2 · 개념 정리 ' + (i+1);
-    left = '<div class="card"><span class="tag">2-1 개념 정리</span><p class="tt">' + esc(c.t) + '</p></div>';
+    title = '활동 2 · 개념 확인 ' + (i+1);
+    left = '<div class="card"><span class="tag">2-1 개념 확인</span><p class="tt">' + esc(c.t) + '</p></div>';
     side = distBars('이름은?', EU.names.map(function(x){ return [x.label, d1.filter(function(s){ return (s.q2.c1[i] || {}).name === x.id; }).length, x.id === c.name]; }), d1.length) +
       distBars('우리나라에서는?', [['합법', d1.filter(function(s){ return (s.q2.c1[i] || {}).legal === true; }).length, c.legal], ['불법', d1.filter(function(s){ return (s.q2.c1[i] || {}).legal === false; }).length, !c.legal]], d1.length);
     ans = [nm + ' · ' + (c.legal ? '합법' : '불법'), i === 2 ? '연명의료결정법(2018년 시행)에 따라 임종 과정의 환자에게만 허용됩니다.' : (i === 0 ? '형법상 촉탁·승낙에 의한 살인죄에 해당합니다.' : '형법상 자살방조죄에 해당합니다. 조력존엄사 법안은 발의만 됐어요.')];
@@ -455,29 +455,32 @@ function paintEx(){
     left = '<div class="card"><span class="tag">2-2 사례 ' + c2.key + '</span><p class="tt" style="font-size:32px">' + esc(c2.t) + '</p></div>';
     side = distBars('법적으로 가능할까?', [['가능', dd.filter(function(s){ return s.q2.c2[i] === true; }).length, c2.a], ['불가능', dd.filter(function(s){ return s.q2.c2[i] === false; }).length, !c2.a]], dd.length);
     ans = [c2.a ? '가능' : '불가능', c2.ex];
-  } else if (kind === 'c3'){
-    var C3 = EU.c3, d3 = all.filter(function(s){ return s.q2 && s.q2.w1; });
-    title = '활동 2 · 두 여론조사';
-    left = '<div class="card"><span class="tag">2-3 자료 해석</span>' + C3.data.map(function(x){
-      return '<p class="bd"><b>자료 (' + x.key + ')</b> <span class="muted" style="font-size:18px">' + esc(x.who) + '</span><br>"' + esc(x.ask) + '"<br>→ <b style="color:var(--hot)">' + esc(x.result) + '</b></p>';
-    }).join('') + '<p class="bd" style="margin-top:18px"><b>' + esc(C3.q1) + '</b></p></div>';
-    var pick = d3.slice().sort(function(a, b){ return U.hash(code + a.sid) - U.hash(code + b.sid); }).slice(0, 6);
-    side = '<div class="panel" style="margin:0"><h2>우리 반 학생들의 답 (이름 없이 ' + pick.length + '개)</h2><div class="ans-list">' +
-      (pick.length ? pick.map(function(s){ return '<div>' + esc(s.q2.w1) + '</div>'; }).join('') : '<p class="muted">아직 답이 없어요.</p>') + '</div></div>';
-    ans = ['모순이 아니에요', C3.ex1];
+  } else if (kind === 'term'){
+    var t = EU.terms[i];
+    title = '용어 정리 · ' + (i+1) + ' / ' + EU.terms.length;
+    left = '<div class="card"><span class="tag">용어 정리</span><p class="tt">' + esc(t.name) + '</p><p class="bd" style="white-space:pre-wrap;font-size:28px">' + esc(t.def) + '</p></div>';
+    if (t.who) side = '<div class="ansbox" style="background:#fff;border-color:var(--line)"><p class="muted" style="font-size:20px;margin:0 0 4px">마지막 행위를 하는 사람</p><p class="a" style="color:var(--ink)">' + esc(t.who) + '</p></div>' +
+      '<div class="ansbox" style="border-color:' + (t.kr ? 'var(--C)' : 'var(--hot)') + ';background:' + (t.kr ? '#e3f1ec' : 'var(--hot-soft)') + '"><p class="muted" style="font-size:20px;margin:0 0 4px">우리나라에서는</p><p class="a" style="color:' + (t.kr ? 'var(--C)' : 'var(--hot)') + '">' + esc(t.law) + '</p>' + (t.world ? '<p>해외: ' + esc(t.world) + '</p>' : '') + '</div>';
+    if (t.point) side += '<div class="panel" style="margin:0"><p style="font-size:24px;margin:0;word-break:keep-all">' + esc(t.point) + '</p></div>';
+    if (!t.who) {
+      // 세 가지 구분 한눈에 보기 (첫 장)
+      if (i === 0) side += '<div class="panel" style="margin:0"><table class="x" style="font-size:23px"><tr><th>구분</th><th>마지막 행위</th><th>우리나라</th></tr>' + EU.terms.filter(function(x){ return x.who; }).map(function(x){
+        return '<tr><td><b>' + esc(x.name) + '</b></td><td>' + esc(x.who.split(' (')[0]) + '</td><td style="font-weight:800;color:' + (x.kr ? 'var(--C)' : 'var(--hot)') + '">' + (x.kr ? '합법' : '불법') + '</td></tr>';
+      }).join('') + '</table></div>';
+    }
   } else {
     var C4 = EU.c4, d4 = all.filter(function(s){ return s.q2; });
     title = '활동 2 · 고르기 문항';
-    left = '<div class="card"><span class="tag">2-4</span><p class="tt" style="font-size:28px">' + esc(C4.q) + '</p><div class="bogi"><p class="h">&lt;보기&gt;</p>' + C4.items.map(function(x){ return '<p>' + esc(x) + '</p>'; }).join('') + '</div>' +
+    left = '<div class="card"><span class="tag">2-3</span><p class="tt" style="font-size:28px">' + esc(C4.q) + '</p><div class="bogi"><p class="h">&lt;보기&gt;</p>' + C4.items.map(function(x){ return '<p>' + esc(x) + '</p>'; }).join('') + '</div>' +
       '<p class="bd">' + C4.choices.map(function(c, k){ return CIRC[k] + ' ' + esc(c); }).join('&nbsp;&nbsp;&nbsp; ') + '</p></div>';
     side = distBars('우리 반은 이렇게 골랐어요', C4.choices.map(function(c, k){ return [CIRC[k] + ' ' + c, d4.filter(function(s){ return s.q2.c4 === k; }).length, k === C4.answer]; }), d4.length);
     ans = ['정답 ' + CIRC[C4.answer] + ' ' + C4.choices[C4.answer], C4.ex];
   }
-  if (exOpen) side += '<div class="ansbox"><p class="a">' + esc(ans[0]) + '</p><p>' + esc(ans[1]) + '</p></div>';
+  if (exOpen && ans) side += '<div class="ansbox"><p class="a">' + esc(ans[0]) + '</p><p>' + esc(ans[1]) + '</p></div>';
   var idx = EX_LIST.indexOf(exKey);
   box.innerHTML = '<div class="ex-top"><div class="k">' + esc(title) + ' <span class="muted" style="font-size:20px">' + (idx + 1) + ' / ' + EX_LIST.length + '</span></div>' +
     '<div class="row"><button class="btn line sm" id="exPrev"' + (idx === 0 ? ' disabled' : '') + '>← 이전</button>' +
-    (exOpen ? '' : '<button class="btn hot sm" id="exOpen">' + (kind === 'c3' ? '해설 보기' : '정답 공개') + '</button>') +
+    (exOpen || kind === 'term' ? '' : '<button class="btn hot sm" id="exOpen">정답 공개</button>') +
     '<button class="btn line sm" id="exNext"' + (idx === EX_LIST.length - 1 ? ' disabled' : '') + '>다음 →</button><button class="btn sm" id="exClose">닫기</button></div></div>' +
     '<div class="ex-body"><div>' + left + '</div><div class="side">' + side + '</div></div>';
   document.getElementById('exPrev').onclick = function(){ moveEx(-1); };
@@ -490,7 +493,7 @@ document.addEventListener('keydown', function(e){
   if (e.key === 'ArrowRight') moveEx(1);
   else if (e.key === 'ArrowLeft') moveEx(-1);
   else if (e.key === 'Escape') closeEx();
-  else if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); if (!exOpen){ exOpen = true; paintEx(); } }
+  else if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); if (exKey.indexOf('term:') === 0) moveEx(1); else if (!exOpen){ exOpen = true; paintEx(); } }
 });
 
 function confetti(){
@@ -559,7 +562,7 @@ function review(){
 /* 결과 내려받기 (엑셀에서 열리는 CSV) — 세특 작성용 */
 function exportCsv(){
   var st = ratingStats();
-  var head = ['학번','이름','처음 생각','처음 이유','활동1 점수(/10)','활동2 점수(/9)','2-3 ① 두 조사 비교','2-3 ② 자료(나) 주장',
+  var head = ['학번','이름','처음 생각','처음 이유','활동1 점수(/10)','활동2 점수(/9)',
     '활동3 입장','근거1','근거1 키워드','근거2','근거2 키워드','예상 반론','재반박','깊이 생각하기','해결 방안',
     '받은 설득력 별점 평균','받은 별점 수','받은 한마디','설득왕','정리: 생각 변화','정리: 영향 준 내용'];
   var rows = list().sort(function(a,b){ return a.sid < b.sid ? -1 : 1; }).map(function(s){
@@ -568,7 +571,7 @@ function exportCsv(){
     var ch = EU.wrap.options.filter(function(v){ return v.id === w.change; })[0];
     var cms = ratings.filter(function(r){ return r.target === s.sid && r.comment && !r.hidden; }).map(function(r){ return r.comment; }).join(' / ');
     var king = (sess.revealed || []).some(function(r){ return r.sid === s.sid; }) ? '설득왕(' + o.stance + '안)' : '';
-    return [s.sid, s.name, first ? first.label : '', I.why || '', s.ox ? s.ox.score : '', s.q2 ? q2.score : '', q2.w1 || '', q2.w2 || '',
+    return [s.sid, s.name, first ? first.label : '', I.why || '', s.ox ? s.ox.score : '', s.q2 ? q2.score : '',
       o.stance ? U.stance(o.stance).label : '', o.r1 || '', (o.k1 || []).join(', '), o.r2 || '', (o.k2 || []).join(', '), o.counter || '', o.rebut || '', o.deep || '', o.plan || '',
       x ? x.avg.toFixed(2) : '', x ? x.n : '', cms, king, ch ? ch.label : '', w.line || ''];
   });

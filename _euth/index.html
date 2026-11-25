@@ -99,6 +99,16 @@ textarea.in{min-height:96px;resize:vertical}
 .sess{display:block;width:100%;text-align:left;padding:16px;border-radius:14px;background:var(--paper);border:2px solid var(--line);margin:0 0 8px;font-weight:700;font-size:17px}
 .sess span{display:block;font-size:13px;font-weight:500;color:var(--ink-2)}
 .cmt{background:#f7f6f2;border-radius:10px;padding:8px 10px;margin:6px 0 0;font-size:14px}
+.term{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
+.term .nm{font-size:17px;font-weight:800;margin:0 0 4px}
+.term .df{margin:0;white-space:pre-wrap;word-break:keep-all}
+.term .meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.term .meta span{font-size:13px;font-weight:700;border-radius:8px;padding:3px 8px;background:#f1f0ec;color:var(--ink-2)}
+.term .meta span.ok{background:var(--ok-soft);color:var(--ok)} .term .meta span.no{background:var(--bad-soft);color:var(--bad)}
+.term .pt{margin:8px 0 0;font-size:14px;color:var(--accent);font-weight:600;word-break:keep-all}
+.cmp{width:100%;border-collapse:collapse;font-size:14px;background:#fff;margin:0 0 12px}
+.cmp th,.cmp td{border:1px solid var(--line);padding:7px 6px;text-align:center;word-break:keep-all}
+.cmp th{background:#f5f4f0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 </style>
@@ -125,7 +135,7 @@ var U = EUUTIL, esc = U.esc;
 var params = new URLSearchParams(location.search);
 var code = (params.get('s') || '').trim();
 var sess = null, me = null, myDoc = {}, tab = 'intro';
-var draft = { intro:{}, ox:[], q2:{ c1:[{},{},{}], c2:[], c4:null, w1:'', w2:'' }, op:null, rate:{}, wrap:{} };
+var draft = { intro:{}, ox:[], q2:{ c1:[{},{},{}], c2:[], c4:null }, op:null, rate:{}, wrap:{} };
 var cache = {}, myRatings = {}, gotRatings = [], lastKey = '', unsubGot = null;
 
 function toast(msg){
@@ -333,14 +343,34 @@ function renderOx(pane){
   bindNext(pane);
 }
 
-/* 활동 2. 문제풀이 */
+/* 활동 2. 용어 정리 → 문제풀이 */
+function termsHtml(){
+  var three = EU.terms.filter(function(t){ return t.who; });
+  var h = '<table class="cmp"><tr><th>구분</th><th>마지막 행위</th><th>우리나라</th></tr>' + three.map(function(t){
+    return '<tr><td><b>' + esc(t.name) + '</b></td><td>' + esc(t.who.split(' (')[0]) + '</td><td style="color:' + (t.kr ? 'var(--ok)' : 'var(--bad)') + ';font-weight:800">' + (t.kr ? '합법' : '불법') + '</td></tr>';
+  }).join('') + '</table>';
+  return h + EU.terms.map(function(t){
+    return '<div class="term"><p class="nm">' + esc(t.name) + '</p><p class="df">' + esc(t.def) + '</p>' +
+      (t.who ? '<div class="meta"><span>마지막 행위: ' + esc(t.who) + '</span><span class="' + (t.kr ? 'ok' : 'no') + '">' + esc(t.law) + '</span>' + (t.world ? '<span>' + esc(t.world) + '</span>' : '') + '</div>' : '') +
+      (t.point ? '<p class="pt">' + esc(t.point) + '</p>' : '') + '</div>';
+  }).join('');
+}
+function termsKey(){ return 'eu:terms:' + code + ':' + me.sid; }
 function renderQ2(pane){
   var d = myDoc.q2, D = draft.q2;
+  var read = d; try { read = read || localStorage.getItem(termsKey()) === '1'; } catch(e){}
   var h = '<h2>활동 2. 무엇이 허용되고 무엇이 불법일까?</h2>';
-  if (d) h += '<div class="box" style="text-align:center"><p class="small">내 점수 (2-1, 2-2, 2-4)</p><p class="score">' + d.score + ' / ' + U.Q2_TOTAL + '</p></div>';
+  if (!read){
+    pane.innerHTML = h + '<p class="lead">문제를 풀기 전에 용어부터 정리해요. 선생님 설명을 들으며 꼼꼼히 읽어 보세요.</p>' + termsHtml() +
+      '<button class="btn" id="termGo">다 읽었어요, 문제 풀기</button>';
+    document.getElementById('termGo').onclick = function(){ try { localStorage.setItem(termsKey(), '1'); } catch(e){} renderQ2(pane); window.scrollTo(0,0); };
+    return;
+  }
+  h += '<details class="box"><summary style="font-weight:800;cursor:pointer">용어 정리 다시 보기</summary><div style="margin-top:10px">' + termsHtml() + '</div></details>';
+  if (d) h += '<div class="box" style="text-align:center"><p class="small">내 점수 (2-1, 2-2, 2-3)</p><p class="score">' + d.score + ' / ' + U.Q2_TOTAL + '</p></div>';
 
   // 2-1
-  h += '<h3>2-1. 개념 정리</h3><p class="small" style="margin:-4px 0 8px">설명에 맞는 이름을 고르고, 우리나라에서 합법인지 불법인지 고르세요. (둘 다 맞아야 1점)</p>';
+  h += '<h3>2-1. 개념 확인</h3><p class="small" style="margin:-4px 0 8px">설명에 맞는 이름을 고르고, 우리나라에서 합법인지 불법인지 고르세요. (둘 다 맞아야 1점)</p>';
   EU.c1.forEach(function(it, i){
     var a = d ? (d.c1[i] || {}) : D.c1[i];
     h += '<div class="q"><p><span class="n">' + (i+1) + ')</span>' + esc(it.t) + '</p>';
@@ -372,21 +402,9 @@ function renderQ2(pane){
     h += '</div>';
   });
 
-  // 2-3
-  var C3 = EU.c3;
-  h += '<h3>2-3. 두 여론조사, 어느 쪽이 맞을까?</h3>' + C3.data.map(function(x){
-    return '<div class="data"><span class="k">자료 (' + x.key + ')</span> <span class="small">' + esc(x.who) + '</span><p style="margin:4px 0">질문: "' + esc(x.ask) + '"</p><p style="margin:0">→ <span class="r">' + esc(x.result) + '</span></p></div>';
-  }).join('');
-  [['w1', C3.q1, C3.ex1], ['w2', C3.q2, C3.ex2]].forEach(function(w, k){
-    h += '<div class="q"><p><span class="n">' + (k ? '②' : '①') + '</span>' + esc(w[1]) + '</p>';
-    if (d) h += '<div class="res info">' + esc(d[w[0]]) + '</div><div class="res ok"><b class="mk">해설</b>' + esc(w[2]) + '</div>';
-    else h += '<textarea class="in" id="' + w[0] + '" maxlength="300" placeholder="2~3문장">' + esc(D[w[0]]) + '</textarea>';
-    h += '</div>';
-  });
-
-  // 2-4
+  // 2-3 (<보기> 고르기)
   var C4 = EU.c4, p4 = d ? d.c4 : D.c4;
-  h += '<h3>2-4. 고르기 문항</h3><div class="q"><p>' + esc(C4.q) + '</p><div class="bogi"><p class="h">&lt;보기&gt;</p>' +
+  h += '<h3>2-3. 고르기 문항</h3><div class="q"><p>' + esc(C4.q) + '</p><div class="bogi"><p class="h">&lt;보기&gt;</p>' +
     C4.items.map(function(x){ return '<p>' + esc(x) + '</p>'; }).join('') + '</div>';
   if (d){
     var ok4 = p4 === C4.answer;
@@ -409,18 +427,9 @@ function renderQ2(pane){
   $$('[data-lg]', pane).forEach(function(b){ b.onclick = function(){ D.c1[+b.getAttribute('data-c1')].legal = b.getAttribute('data-lg') === '1'; rerender(); }; });
   $$('[data-c2]', pane).forEach(function(b){ b.onclick = function(){ D.c2[+b.getAttribute('data-c2')] = b.getAttribute('data-v') === '1'; rerender(); }; });
   $$('[data-c4]', pane).forEach(function(b){ b.onclick = function(){ D.c4 = +b.getAttribute('data-c4'); rerender(); }; });
-  ['w1','w2'].forEach(function(k){
-    var el = document.getElementById(k);
-    if (el) el.oninput = function(){
-      D[k] = el.value;
-      var g = document.getElementById('q2Go'), m = missQ2();
-      if (g){ g.disabled = !!m; g.textContent = m ? '남은 문항: ' + m : '제출하고 채점하기'; }
-    };
-  });
   var go = document.getElementById('q2Go');
   if (go) go.onclick = function(){
-    var v = { c1:D.c1.map(function(a){ return { name:a.name, legal:a.legal }; }), c2:D.c2.slice(0, EU.c2.length), c4:D.c4,
-              w1:D.w1.trim(), w2:D.w2.trim() };
+    var v = { c1:D.c1.map(function(a){ return { name:a.name, legal:a.legal }; }), c2:D.c2.slice(0, EU.c2.length), c4:D.c4 };
     v.score = U.scoreQ2(v);
     go.disabled = true;
     save({ q2:v, q2At:EF.ts() }).then(function(){ myDoc.q2 = v; render(); window.scrollTo(0,0); })
@@ -432,8 +441,7 @@ function missQ2(){
   var D = draft.q2, m = [];
   if (!D.c1.every(function(a){ return a.name && (a.legal === true || a.legal === false); })) m.push('2-1');
   if (EU.c2.some(function(_, i){ return D.c2[i] !== true && D.c2[i] !== false; })) m.push('2-2');
-  if ((D.w1 || '').trim().length < 5 || (D.w2 || '').trim().length < 5) m.push('2-3');
-  if (D.c4 == null) m.push('2-4');
+  if (D.c4 == null) m.push('2-3');
   return m.join(', ');
 }
 

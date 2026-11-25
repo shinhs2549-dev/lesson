@@ -2,4 +2,4 @@
  * 비어 있으면 칠판에서 '복사해서 Claude에 붙여넣기' 방식만 쓸 수 있어요.
  * 칠판 화면의 'AI 연결 설정'에서 그 칠판에만 따로 넣을 수도 있습니다.
  */
-window.EU_AI_URL = '';
+window.EU_AI_URL = 'https://script.google.com/macros/s/AKfycbwA2K8ObFwowOTz-bj7zqnO4uZ8CJ5baTytjqNa7Ct0nrWpsw2B3ym1S_gq95LEpzHW/exec';

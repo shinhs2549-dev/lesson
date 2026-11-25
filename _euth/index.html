@@ -143,8 +143,8 @@ var U = EUUTIL, esc = U.esc;
 var params = new URLSearchParams(location.search);
 var code = (params.get('s') || '').trim();
 var sess = null, me = null, myDoc = {}, tab = 'intro';
-var draft = { intro:{}, ox:[], q2:{ c1:[{},{},{}], c2:[], c4:null }, op:null, rate:{}, wrap:{} };
-var cache = {}, myRatings = {}, gotRatings = [], lastKey = '', unsubGot = null;
+var draft = { intro:{}, ox:[], q2:{ c1:[{},{},{}], c2:[], c4:null }, op:null, wrap:{} };
+var lastKey = '';
 
 function toast(msg){
   var t = document.getElementById('toast');
@@ -231,7 +231,7 @@ function enter(){
     if (first){
       first = false;
       if (sess.phase === 'wrap') tab = 'wrap';
-      else if (sess.phase === 'read') tab = 'op';
+      else if (sess.phase === 'judge') tab = myDoc.op ? 'tch' : 'op';
       else if (myDoc.op) tab = 'tch';
       else if (myDoc.q2) tab = 'op';
       else if (myDoc.ox) tab = 'q2';
@@ -241,26 +241,17 @@ function enter(){
   }, fail);
   EF.session(code).onSnapshot(function(d){
     var old = sess; sess = d.data() || sess;
-    var key = [sess.phase, (sess.readOrder||[]).join(',')].join('|');
+    var key = [sess.phase, sess.shownRanks || 0, sess.ai ? sess.ai.at : 0].join('|');
     if (key !== lastKey){
       var changed = old && old.phase !== sess.phase;
       lastKey = key;
-      if (changed && sess.phase === 'read'){ tab = 'op'; toast('돌려 읽기 시작!'); }
+      if (changed && sess.phase === 'judge'){ if (tab === 'op') tab = myDoc.op ? 'tch' : 'op'; toast('AI 논리왕 심사 시작! 활동 3은 더 고칠 수 없어요'); }
+      if (old && (old.shownRanks || 0) < (sess.shownRanks || 0)) toast('논리왕 ' + [3, 2, 1][(sess.shownRanks || 1) - 1] + '위 발표! 칠판을 보세요');
       if (changed && sess.phase === 'wrap'){ tab = 'wrap'; toast('정리 시간이에요'); }
-      if (sess.phase !== 'solo') listenGot();
       if (!first) render();
     }
   }, fail);
 }
-// 내 의견에 친구들이 남긴 별점·한마디
-function listenGot(){
-  if (unsubGot) return;
-  unsubGot = EF.ratings(code).where('target', '==', me.sid).onSnapshot(function(s){
-    gotRatings = []; s.forEach(function(d){ gotRatings.push(d.data()); });
-    if (tab === 'op') keep(render);
-  }, function(e){ console.error(e); });
-}
-
 /* ---------- 화면 ---------- */
 var TABS = [['intro','도입'], ['ox','활동1'], ['q2','활동2'], ['op','활동3'], ['tch','활동4'], ['wrap','정리']];
 function done(id){ return !!myDoc[id]; }
@@ -473,26 +464,22 @@ function renderOp(pane){
   var h = '<h2>활동 3. 우리 사회는 무엇을 허용해야 할까?</h2>';
   if (myDoc.hiddenByTeacher) h += '<div class="notice">선생님이 내 의견을 다시 써 달라고 했어요. 내용을 고쳐서 다시 제출해 주세요.</div>';
   if (ph === 'solo' || myDoc.hiddenByTeacher) return renderOpForm(pane, h);
-  if (ph === 'read') return renderRead(pane, h);
-  // 정리 단계: 내 의견 + 받은 반응
-  h += myOpBlock();
-  pane.innerHTML = h + '<button class="btn line" data-next="wrap">정리로 가기</button>';
+  h += '<div class="notice">AI 논리왕 심사가 시작돼서 더 고칠 수 없어요.</div>' + myOpBlock();
+  pane.innerHTML = h + '<button class="btn line" data-next="tch">활동 4로 가기</button>';
   bindNext(pane);
 }
+var MEDAL = { 1:'🥇', 2:'🥈', 3:'🥉' };
+function aiBlock(){
+  var A = myDoc.ai;
+  if (!A) return '<p class="small">AI 심사 결과가 아직 없어요. 선생님이 결과를 적용하면 여기에 나와요.</p>';
+  return '<div class="box">' + (A.rank ? '<p style="margin:0 0 6px;font-weight:800;color:var(--hot)">' + MEDAL[A.rank] + ' 논리왕 ' + A.rank + '위!</p>' : '') +
+    '<p style="margin:0 0 8px">AI 논리 점수 <b style="font-size:22px">' + A.total + '</b> / 20</p>' +
+    EU.criteria.map(function(c, i){ return '<p class="small" style="margin:0">' + esc(c.short) + ' ' + '●●●●●'.slice(0, A.scores[i]) + '<span style="color:#d6d1c6">' + '●●●●●'.slice(A.scores[i]) + '</span></p>'; }).join('') +
+    (A.comment ? '<div class="cmt" style="margin-top:8px">💬 ' + esc(A.comment) + '</div>' : '') + '</div>';
+}
 function myOpBlock(){
-  var h = '';
-  if (myDoc.op){
-    h += '<h3>내 의견</h3>' + opHtml(myDoc.op, true);
-    var got = gotRatings.filter(function(r){ return !r.hidden; });
-    h += '<h3>친구들의 반응</h3>';
-    if (!got.length) h += '<p class="small">아직 받은 반응이 없어요.</p>';
-    else {
-      var avg = got.reduce(function(a, r){ return a + r.stars; }, 0) / got.length;
-      h += '<div class="box"><p style="margin:0">설득력 별점 평균 <b style="font-size:20px">' + avg.toFixed(1) + '</b> <span class="small">(' + got.length + '명)</span></p>' +
-        got.filter(function(r){ return r.comment; }).map(function(r){ return '<div class="cmt">' + esc(r.comment) + '</div>'; }).join('') + '</div>';
-    }
-  } else h += '<div class="notice">활동 3 의견을 제출하지 않았어요.</div>';
-  return h;
+  if (!myDoc.op) return '<div class="notice">활동 3 의견을 제출하지 않았어요.</div>';
+  return '<h3>내 의견</h3>' + opHtml(myDoc.op, true) + '<h3>🤖 AI 심사</h3>' + aiBlock();
 }
 function blankOp(){ return { stance:'', r1:'', k1:[], r2:'', k2:[], counter:'', rebut:'', deep:'', plan:'' }; }
 function renderOpForm(pane, h){
@@ -550,60 +537,6 @@ function renderOpForm(pane, h){
   };
 }
 
-function loadOps(ids){
-  var need = ids.filter(function(id){ return !(id in cache); });
-  return Promise.all(need.map(function(id){
-    return EF.students(code).doc(id).get().then(function(d){ var x = d.data() || {}; cache[id] = x.hiddenByTeacher ? null : (x.op || null); });
-  }));
-}
-function renderRead(pane, h){
-  var order = sess.readOrder || [], stOf = sess.readStance || {};
-  var mine = myDoc.op ? myDoc.op.stance : '';
-  var targets = U.readTargets(code, me.sid, order, stOf, mine, EU.READ_COUNT);
-  h += '<p class="lead">친구 의견 ' + targets.length + '개를 이름 없이 읽어요. 되도록 <b>나와 다른 입장</b>의 의견이 먼저 나와요. 설득력 별점을 주고, 묻고 싶은 것이나 반박을 한 줄 남겨 보세요.</p>';
-  if (!targets.length){ pane.innerHTML = h + '<div class="lock"><p class="big">📄</p>아직 읽을 의견이 없어요.</div>' + myOpBlock(); return; }
-  pane.innerHTML = h + '<p class="small">불러오는 중…</p>';
-  Promise.all([loadOps(targets)].concat(targets.map(function(t){
-    if (myRatings[t]) return null;
-    return EF.ratings(code).doc(me.sid + '_' + t).get().then(function(d){ if (d.exists) myRatings[t] = d.data(); });
-  }))).then(function(){
-    var out = h;
-    targets.forEach(function(t, i){
-      var o = cache[t], r = myRatings[t], dr = draft.rate[t] || (draft.rate[t] = { stars:0, comment:'' });
-      out += '<div class="q"><p class="n" style="margin:0 0 8px">' + (i+1) + '번째 의견</p>' + (o ? opHtml(o, false) : '<p class="small">이 의견은 볼 수 없어요.</p>');
-      if (r){
-        out += '<p style="margin:6px 0">내 별점 ' + '★★★★★'.slice(0, r.stars) + '<span style="color:#d6d1c6">' + '★★★★★'.slice(r.stars) + '</span></p>' +
-          (r.comment ? '<div class="cmt">내 한마디: ' + esc(r.comment) + '</div>' : '');
-      } else if (o){
-        out += '<p class="small" style="margin:8px 0 0">이 의견은 얼마나 설득력 있나요? (내 입장과 달라도 공정하게)</p><div class="stars">' + [1,2,3,4,5].map(function(s){
-          return '<button class="' + (dr.stars>=s?'on':'') + '" data-t="' + t + '" data-s="' + s + '">★</button>';
-        }).join('') + '</div><input class="in" data-cm="' + t + '" maxlength="80" placeholder="묻고 싶은 것이나 반박 한 줄 (선택)" value="' + esc(dr.comment) + '">' +
-          '<button class="btn" data-rate="' + t + '">보내기</button>';
-      }
-      out += '</div>';
-    });
-    var n = targets.filter(function(t){ return myRatings[t]; }).length;
-    if (n === targets.length) out += '<div class="lock" style="padding:10px"><p class="big">👏</p>다 읽었어요! 아래에서 내 의견에 대한 반응을 확인해 보세요.</div>';
-    out += myOpBlock();
-    pane.innerHTML = out;
-    $$('[data-s]', pane).forEach(function(b){
-      b.onclick = function(){ draft.rate[b.getAttribute('data-t')].stars = +b.getAttribute('data-s'); keep(function(){ renderOp(pane); }); };
-    });
-    $$('[data-cm]', pane).forEach(function(i){ i.oninput = function(){ draft.rate[i.getAttribute('data-cm')].comment = i.value; }; });
-    $$('[data-rate]', pane).forEach(function(b){
-      b.onclick = function(){
-        var t = b.getAttribute('data-rate'), dr = draft.rate[t];
-        if (!dr.stars) return toast('별점을 골라 주세요');
-        b.disabled = true;
-        var doc = { reader:me.sid, target:t, stars:dr.stars, comment:(dr.comment || '').trim(), hidden:false, at:EF.ts() };
-        EF.ratings(code).doc(me.sid + '_' + t).set(doc).then(function(){
-          myRatings[t] = doc; keep(function(){ renderOp(pane); });
-        }).catch(function(e){ b.disabled = false; fail(e); });
-      };
-    });
-  }).catch(fail);
-}
-
 /* 활동 4. 선생님 주장 반박하기 */
 function claimHtml(){
   var T = EU.teacher;
@@ -656,6 +589,13 @@ function renderWrap(pane){
     pane.innerHTML = h + '<div class="lock"><p class="big">🔒</p>선생님이 정리를 시작하면 열려요.</div>';
     return;
   }
+  var shown = sess.shownRanks || 0, top = (sess.ai || {}).top || [];
+  if (shown){
+    h += '<div class="box"><h4>🤖 AI가 뽑은 논리왕</h4>' + top.filter(function(t){ return [3, 2, 1].indexOf(t.rank) < shown; }).map(function(t){
+      return '<p style="margin:2px 0">' + MEDAL[t.rank] + ' ' + t.rank + '위 · ' + esc(U.stance(t.stance || '').short || '') + (t.sid === me.sid ? ' <b style="color:var(--hot)">나!</b>' : '') + '</p>';
+    }).join('') + '<p class="small" style="margin:6px 0 0">이름과 의견은 칠판에서 확인하세요.</p></div>';
+  }
+  if (myDoc.op) h += '<h3 style="margin-top:0">내 의견에 대한 AI 심사</h3>' + aiBlock();
   var I = EU.intro, first = I.options.filter(function(x){ return x.id === (myDoc.intro||{}).stance; })[0] || {};
   h += '<div class="box"><p style="margin:0 0 4px">처음 생각: <b>' + esc(first.label || '-') + '</b> <span class="small">' + esc((myDoc.intro||{}).why || '') + '</span></p>' +
     '<p style="margin:0">활동 3 입장: <b>' + esc(myDoc.op ? U.stance(myDoc.op.stance).label : '제출 안 함') + '</b></p></div>';

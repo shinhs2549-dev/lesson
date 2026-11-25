@@ -3,11 +3,9 @@
  * 기준 시점: 2026년 11월 (우리나라 현행법 기준)
  */
 window.EU = {
-  READ_COUNT: 3,          // 돌려 읽기에서 학생 한 명이 읽는 친구 의견 수
-
   phases: [
     { id: 'solo', name: '혼자 풀기' },
-    { id: 'read', name: '돌려 읽기' },
+    { id: 'judge', name: 'AI 논리왕' },
     { id: 'wrap', name: '정리' }
   ],
 
@@ -157,6 +155,14 @@ window.EU = {
     alt: '고령화에 따른 사회적 비용 문제를 안락사 말고 어떻게 해결할 수 있을까?'
   },
 
+  // AI 논리왕 채점 기준 (각 5점, 총 20점)
+  criteria: [
+    { short: '입장·근거 일관성', desc: '고른 입장이 분명하고, 근거가 그 입장을 제대로 뒷받침하는가' },
+    { short: '근거의 타당성', desc: '근거가 김○○ 씨 사례에 구체적으로 적용되었고, 고른 관점 키워드를 정확한 의미로 썼는가' },
+    { short: '반론 고려', desc: '예상 반론이 반대 입장의 강한 논리를 담고 있고, 재반박이 그 반론에 직접 답하는가' },
+    { short: '깊이·해결 방안', desc: '"가족에게 짐이 되기 싫다"는 말을 자기 입장과 연결해 성찰했고, 해결 방안이 구체적이며 입장과 이어지는가' }
+  ],
+
   // 정리
   wrap: {
     options: [
@@ -194,18 +200,6 @@ window.EUUTIL = {
   stance: function (id) {
     for (var i = 0; i < EU.stances.length; i++) if (EU.stances[i].id === id) return EU.stances[i];
     return { id: id, short: '', label: '' };
-  },
-  // 돌려 읽기: 순서(order)에서 내 다음 의견 n개. 나와 다른 입장을 먼저 고르고, 모자라면 같은 입장으로 채움
-  readTargets: function (code, sid, order, stanceOf, myStance, n) {
-    var len = order.length;
-    if (!len) return [];
-    var idx = order.indexOf(sid);
-    var start = idx >= 0 ? idx + 1 : (EUUTIL.hash(code + sid) % len);
-    var ring = [];
-    for (var k = 0; k < len; k++) { var t = order[(start + k) % len]; if (t !== sid) ring.push(t); }
-    var other = ring.filter(function (t) { return !myStance || stanceOf[t] !== myStance; });
-    var same = ring.filter(function (t) { return myStance && stanceOf[t] === myStance; });
-    return other.concat(same).slice(0, n);
   },
   // 활동 2 채점 (2-1은 이름과 합법 여부가 둘 다 맞아야 1점)
   scoreQ2: function (q2) {

@@ -36,7 +36,6 @@
     sessions: sessions,
     session: session,
     students: function (code) { return session(code).collection('students'); },
-    ratings: function (code) { return session(code).collection('ratings'); },
     isPermission: function (e) { return e && (e.code === 'permission-denied' || /permission/i.test(e.message || '')); }
   };
 })();
